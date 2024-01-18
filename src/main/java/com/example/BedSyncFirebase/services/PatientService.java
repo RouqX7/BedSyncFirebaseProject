@@ -24,26 +24,26 @@ public class PatientService {
         return patientRepository.findAll();
     }
 
-    public Optional<Patient> getPatientByUid(String uid) throws ExecutionException, InterruptedException {
-        return patientRepository.findById(uid);
+    public Optional<Patient> getPatientById(String id) throws ExecutionException, InterruptedException {
+        return patientRepository.findById(id);
     }
 
     public Patient saveOrUpdatePatient(Patient updatedPatient) throws ExecutionException, InterruptedException {
         return patientRepository.save(updatedPatient);
     }
 
-    public void deletePatient(String uid) throws ExecutionException, InterruptedException {
-        patientRepository.deleteById(uid);
+    public void deletePatient(String id) throws ExecutionException, InterruptedException {
+        patientRepository.deleteById(id);
     }
 
     public Patient assignPatientToBed(String patientId, String bedId) throws ExecutionException, InterruptedException {
-        Patient patient = getPatientByUid(patientId).orElseThrow(() -> new RuntimeException("Patient not found with ID: " + patientId));
+        Patient patient = getPatientById(patientId).orElseThrow(() -> new RuntimeException("Patient not found with ID: " + patientId));
         patient.setBedId(bedId);
         return saveOrUpdatePatient(patient);
     }
 
-    public Patient unassignPatientFromBed(String uid) throws ExecutionException, InterruptedException {
-        Patient patient = getPatientByUid(uid).orElseThrow(() -> new RuntimeException("Patient not found with ID: " + uid));
+    public Patient unassignPatientFromBed(String id) throws ExecutionException, InterruptedException {
+        Patient patient = getPatientById(id).orElseThrow(() -> new RuntimeException("Patient not found with ID: " + uid));
 
         // Unassign the patient from the bed
         patient.setBedId(null);
