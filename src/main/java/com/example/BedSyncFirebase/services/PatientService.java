@@ -43,7 +43,7 @@ public class PatientService {
     }
 
     public Patient unassignPatientFromBed(String id) throws ExecutionException, InterruptedException {
-        Patient patient = getPatientById(id).orElseThrow(() -> new RuntimeException("Patient not found with ID: " + uid));
+        Patient patient = getPatientById(id).orElseThrow(() -> new RuntimeException("Patient not found with ID: " + id));
 
         // Unassign the patient from the bed
         patient.setBedId(null);
