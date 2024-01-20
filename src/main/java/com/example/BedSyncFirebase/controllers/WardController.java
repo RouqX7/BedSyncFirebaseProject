@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -26,16 +27,24 @@ public class WardController {
         }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getWardById(@PathVariable String id) {
+    @GetMapping("/{wardId}")
+    public ResponseEntity<?> getWardById(@PathVariable String wardId) {
         try {
-            return wardService.getWardById(id)
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.notFound().build());
+            System.out.println("Received wardId: " + wardId);
+
+            Optional<Ward> wardOptional = wardService.getWardById(wardId);
+            if (wardOptional.isPresent()) {
+                System.out.println("Found ward in database: " + wardOptional.get());
+                return ResponseEntity.ok(wardOptional.get());
+            } else {
+                System.out.println("Ward not found in database.");
+                return ResponseEntity.notFound().build();
+            }
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.badRequest().body("Error fetching ward: " + e.getMessage());
         }
     }
+
 
     @PostMapping("/create-ward")
     public ResponseEntity<?> createWard(@RequestBody Ward ward) {
@@ -46,12 +55,12 @@ public class WardController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateWard(@PathVariable String id, @RequestBody Ward ward) {
+    @PutMapping("/{wardId}")
+    public ResponseEntity<?> updateWard(@PathVariable String wardId, @RequestBody Ward ward) {
         try {
-            return wardService.getWardById(id)
+            return wardService.getWardById(wardId)
                     .map(existingWard -> {
-                        ward.setUid(id);
+                        ward.setId(wardId);
                         try {
                             return ResponseEntity.ok(wardService.saveOrUpdateWard(ward));
                         } catch (ExecutionException | InterruptedException e) {
@@ -63,6 +72,7 @@ public class WardController {
             return ResponseEntity.badRequest().body("Error updating ward: " + e.getMessage());
         }
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteWard(@PathVariable String uid) {

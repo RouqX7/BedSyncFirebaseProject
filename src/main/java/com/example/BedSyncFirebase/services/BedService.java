@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -27,9 +26,11 @@ public class BedService {
         return bedRepository.findAll();
     }
 
-    public Optional<Bed> getBedById(String id) throws ExecutionException, InterruptedException {
-        return bedRepository.findById(id);
+    public Bed getBedById(String id) throws ExecutionException, InterruptedException {
+        return bedRepository.findById(id)
+                .orElse(null);
     }
+
 
     public Bed createBed(Bed bed) throws ExecutionException, InterruptedException {
         return bedRepository.save(bed);
@@ -45,26 +46,31 @@ public class BedService {
         bed.setState(bedState);
         bedRepository.save(bed);
 
-        updateWardAvailableBeds(bed.getWardId(), (newState));
+        updateAvailableBedsInWard(bed.getWardId(), (newState));
     }
 
-    public void updateWardAvailableBeds(String wardUid, BedState newState) throws ExecutionException, InterruptedException {
-        Ward ward = wardRepository.findByUid(wardUid)
-                .orElseThrow(() -> new RuntimeException("Ward not found with id: " + wardUid));
+    public void updateAvailableBedsInWard(String wardUid, BedState newState) throws ExecutionException, InterruptedException {
+        Ward ward;
+        try {
+            ward = wardRepository.findById(wardUid)
+                    .orElseThrow(() -> new RuntimeException("Ward not found with id: " + wardUid));
 
-        int currentAvailableBeds = ward.getAvailableBeds();
+            int currentAvailableBeds = ward.getAvailableBeds();
 
-        switch (newState.getStatus()) {
-            case "OCCUPIED":
-            case "DIRTY":
-                ward.setAvailableBeds(Math.max(0, currentAvailableBeds - 1));
-                break;
-            case "AVAILABLE":
-            case "CLEAN":
-                ward.setAvailableBeds(Math.min(ward.getTotalBeds(), currentAvailableBeds + 1));
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid bed state: " + newState.getStatus());
+            switch (newState.getStatus()) {
+                case "OCCUPIED":
+                case "DIRTY":
+                    ward.setAvailableBeds(Math.max(0, currentAvailableBeds - 1));
+                    break;
+                case "AVAILABLE":
+                case "CLEAN":
+                    ward.setAvailableBeds(Math.min(ward.getTotalBeds(), currentAvailableBeds + 1));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid bed state: " + newState.getStatus());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error updating ward available beds", e);
         }
 
         wardRepository.save(ward);
@@ -81,16 +87,17 @@ public class BedService {
 
         bed.setAvailable(isAvailable);
         bedRepository.save(bed);
-        Ward ward = wardRepository.findByUid(bed.getWardId())
-                .orElseThrow(() -> new RuntimeException("Bed not found with id: " + bedUid));
+        Ward ward = wardRepository.findById(bed.getWardId())
+                .orElseThrow(() -> new RuntimeException("Ward not found with id: " + bed.getWardId()));
 
         if (isAvailable) {
-            ward.setAvailableBeds(ward.getAvailableBeds() + 1);
+            ward.setAvailableBeds(Math.min(ward.getTotalBeds(), ward.getAvailableBeds() + 1));
         } else {
-            ward.setAvailableBeds(ward.getAvailableBeds() -1);
+            ward.setAvailableBeds(ward.getAvailableBeds() - 1);
         }
         wardRepository.save(ward);
     }
+
 
     public List<Bed> getBedsByTimestampRange(LocalDateTime startTimestamp, LocalDateTime endTimestamp) throws ExecutionException, InterruptedException {
         return bedRepository.findByTimestampBetween(startTimestamp, endTimestamp);

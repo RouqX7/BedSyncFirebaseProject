@@ -30,13 +30,13 @@ public class WardRepository {
         return wardList;
     }
 
-    public Optional<Ward> findByUid(String uid) throws ExecutionException, InterruptedException {
-        CollectionReference wards = firestore.collection("wards");
-        ApiFuture<QuerySnapshot> querySnapshot = wards.whereEqualTo("uid", uid).get();
+    public Optional<Ward> findById(String id) throws ExecutionException, InterruptedException {
+        DocumentReference docRef = firestore.collection("wards").document(id);
+        ApiFuture<DocumentSnapshot> documentSnapshot = docRef.get();
 
-        if (!querySnapshot.get().isEmpty()) {
-            QueryDocumentSnapshot documentSnapshot = querySnapshot.get().getDocuments().get(0);
-            Ward ward = documentSnapshot.toObject(Ward.class);
+        if (documentSnapshot.get().exists()) {
+            Ward ward = documentSnapshot.get().toObject(Ward.class);
+            assert ward != null;
             return Optional.of(ward);
         } else {
             return Optional.empty();

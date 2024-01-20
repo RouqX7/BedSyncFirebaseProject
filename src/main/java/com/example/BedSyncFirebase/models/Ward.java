@@ -1,10 +1,6 @@
 package com.example.BedSyncFirebase.models;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.google.cloud.firestore.annotation.DocumentId;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -12,8 +8,7 @@ import java.time.LocalDateTime;
 
 public  class Ward {
 
-    @DocumentId
-    protected String uid; // Unique identifier for the ward
+    protected String id; // Unique identifier for the ward
     protected String name; // Ward name
     protected int capacity;
     protected String description;
@@ -24,9 +19,14 @@ public  class Ward {
     protected int availableBeds;
     protected LocalDateTime timestamp;
 
+    public Ward(){
+        // Default constructor is needed for Firestore deserialization
 
-    public Ward(String uid, String name, int capacity, String description, String status, int currentOccupancy, String responsibleDepartment, int totalBeds, int availableBeds, LocalDateTime timestamp) {
-        this.uid = uid;
+    }
+
+
+    public Ward(String id, String name, int capacity, String description, String status, int currentOccupancy, String responsibleDepartment, int totalBeds, int availableBeds, LocalDateTime timestamp) {
+        this.id = id;
         this.name = name;
         this.capacity = capacity;
         this.description = description;
@@ -38,12 +38,12 @@ public  class Ward {
         this.timestamp = timestamp;
     }
 
-    public String getUid() {
-        return uid;
+    public String getId() {
+        return id;
     }
 
-    public void setUid(String uid) {
-        this.uid = uid;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -121,7 +121,7 @@ public  class Ward {
     @Override
     public String toString() {
         return "Ward{" +
-                "uid='" + uid + '\'' +
+                "uid='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", capacity=" + capacity +
                 ", description='" + description + '\'' +

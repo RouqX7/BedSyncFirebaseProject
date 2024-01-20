@@ -5,6 +5,7 @@ import com.example.BedSyncFirebase.services.BedService;
 import com.example.BedSyncFirebase.services.WardService;
 import com.example.BedSyncFirebase.states.BedState;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,14 +29,14 @@ public class BedController {
     }
 
     @GetMapping("/{uid}")
-    public ResponseEntity<Bed> getBedById(@PathVariable String id) throws ExecutionException, InterruptedException {
-        Optional<Bed> bed = bedService.getBedById(id);
-        return bed.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    @PostMapping
-    public Bed createBed(@RequestBody Bed bed) throws ExecutionException, InterruptedException {
-        return bedService.createBed(bed);
+    public ResponseEntity<?> getBedById(@PathVariable String uid) {
+        try {
+            Bed bed = bedService.getBedById(uid);
+            return ResponseEntity.ok(bed);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving bed: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -58,19 +59,29 @@ public class BedController {
     @PatchMapping("/{wardId}/updateAvailableBeds")
     public ResponseEntity<?> updateWardAvailableBeds(@PathVariable String wardId, @RequestBody BedState newState) {
         try {
-            bedService.updateWardAvailableBeds(wardId, newState);
+            bedService.updateAvailableBedsInWard(wardId, newState);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException | ExecutionException | InterruptedException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @GetMapping("/{wardId}/beds")
+    @GetMapping("/wards/{wardId}/beds")
     public ResponseEntity<?> getBedsByWard(@PathVariable String wardId) {
         try {
             List<Bed> beds = bedService.getBedsByWard(wardId);
             return ResponseEntity.ok(beds);
         } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @PostMapping("/wards/{wardId}/create-bed")
+    public ResponseEntity<?> createBedForWard(@PathVariable String wardId, @RequestBody Bed bed) {
+        try {
+            bed.setWardId(wardId);  // Associate the bed with the specified wardId
+            Bed createdBed = bedService.createBed(bed);
+            return ResponseEntity.ok(createdBed);
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

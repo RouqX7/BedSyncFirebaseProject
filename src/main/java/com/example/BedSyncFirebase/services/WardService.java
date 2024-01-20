@@ -21,7 +21,7 @@ public class WardService {
     }
 
     public Optional<Ward> getWardById(String id) throws ExecutionException, InterruptedException {
-        return wardRepository.findByUid(id);
+        return wardRepository.findById(id);
     }
 
     public Ward saveOrUpdateWard(Ward ward) throws ExecutionException, InterruptedException {
