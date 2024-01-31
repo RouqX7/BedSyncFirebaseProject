@@ -37,14 +37,14 @@ public class BedRepository {
         ApiFuture<DocumentSnapshot> documentSnapshot = documentReference.get();
 
         if (documentSnapshot.get().exists()) {
-            // Example: FirebaseBed bed = convertDocToBed(documentSnapshot.get());
-            // ...
-
-            return Optional.ofNullable(null); // Return the FirebaseBed object
+            Bed bed = documentSnapshot.get().toObject(Bed.class);
+            assert bed != null;
+            return Optional.of(bed);
         } else {
             return Optional.empty();
         }
     }
+
 
     public Bed save(Bed bed) throws ExecutionException, InterruptedException {
         CollectionReference beds = firestore.collection("beds");
@@ -102,6 +102,36 @@ public class BedRepository {
 
         return bedList;
     }
+
+    public List<Bed> findByIsAvailable(boolean isAvailable) throws ExecutionException, InterruptedException {
+        CollectionReference beds = firestore.collection("beds");
+        QuerySnapshot querySnapshot = beds.whereEqualTo("isAvailable", isAvailable).get().get();
+
+        List<Bed> bedList = new ArrayList<>();
+        for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
+            Bed bed = document.toObject(Bed.class);
+            bedList.add(bed);
+        }
+
+        return bedList;
+    }
+
+    public List<Bed> findAvailableBedsByWardId(String wardId) throws ExecutionException, InterruptedException {
+        CollectionReference beds = firestore.collection("beds");
+        ApiFuture<QuerySnapshot> querySnapshot = beds.whereEqualTo("wardId", wardId)
+                .whereEqualTo("isAvailable", true)
+                .get();
+
+        List<Bed> bedList = new ArrayList<>();
+        for (QueryDocumentSnapshot document : querySnapshot.get().getDocuments()) {
+            Bed bed = document.toObject(Bed.class);
+            bedList.add(bed);
+        }
+
+        return bedList;
+    }
+
+
 
     public List<Bed> findByTimestampBetween(LocalDateTime startTimestamp, LocalDateTime endTimestamp) throws ExecutionException, InterruptedException {
         CollectionReference beds = firestore.collection("beds");

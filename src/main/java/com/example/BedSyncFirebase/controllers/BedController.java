@@ -28,10 +28,10 @@ public class BedController {
         return bedService.getAllBeds();
     }
 
-    @GetMapping("/{uid}")
-    public ResponseEntity<?> getBedById(@PathVariable String uid) {
+    @GetMapping("/{bedId}")
+    public ResponseEntity<?> getBedById(@PathVariable String bedId) {
         try {
-            Bed bed = bedService.getBedById(uid);
+            Bed bed = bedService.getBedById(bedId);
             return ResponseEntity.ok(bed);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -55,6 +55,16 @@ public class BedController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @GetMapping("/available")
+    public List<Bed> getAllAvailableBeds() throws ExecutionException, InterruptedException {
+        return bedService.getAllAvailableBeds();
+    }
+
+    @GetMapping("/available/{wardId}")
+    public List<Bed> getAvailableBedsByWardId(@PathVariable String wardId) throws ExecutionException, InterruptedException {
+        return bedService.findAvailableBedsByWardId(wardId);
+    }
+
 
     @PatchMapping("/{wardId}/updateAvailableBeds")
     public ResponseEntity<?> updateWardAvailableBeds(@PathVariable String wardId, @RequestBody BedState newState) {
@@ -78,6 +88,7 @@ public class BedController {
     @PostMapping("/wards/{wardId}/create-bed")
     public ResponseEntity<?> createBedForWard(@PathVariable String wardId, @RequestBody Bed bed) {
         try {
+            System.out.println("Ward ID received: " + wardId); // Add this line
             bed.setWardId(wardId);  // Associate the bed with the specified wardId
             Bed createdBed = bedService.createBed(bed);
             return ResponseEntity.ok(createdBed);

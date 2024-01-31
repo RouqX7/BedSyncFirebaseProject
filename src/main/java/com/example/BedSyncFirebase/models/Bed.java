@@ -19,6 +19,10 @@ public class Bed {
     private String patientId;
     private LocalDateTime timestamp;
 
+    public Bed(){
+
+    }
+
     public Bed(String id, String wardId, boolean isAvailable, String bedNumber, String bedType, BedState state, String patientId, LocalDateTime timestamp) {
         this.id = id;
         this.wardId = wardId;

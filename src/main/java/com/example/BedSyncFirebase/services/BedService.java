@@ -33,6 +33,7 @@ public class BedService {
 
 
     public Bed createBed(Bed bed) throws ExecutionException, InterruptedException {
+        bed.setWardId(bed.getWardId());
         return bedRepository.save(bed);
     }
 
@@ -49,11 +50,11 @@ public class BedService {
         updateAvailableBedsInWard(bed.getWardId(), (newState));
     }
 
-    public void updateAvailableBedsInWard(String wardUid, BedState newState) throws ExecutionException, InterruptedException {
+    public void updateAvailableBedsInWard(String wardId, BedState newState) throws ExecutionException, InterruptedException {
         Ward ward;
         try {
-            ward = wardRepository.findById(wardUid)
-                    .orElseThrow(() -> new RuntimeException("Ward not found with id: " + wardUid));
+            ward = wardRepository.findById(wardId)
+                    .orElseThrow(() -> new RuntimeException("Ward not found with id: " + wardId));
 
             int currentAvailableBeds = ward.getAvailableBeds();
 
@@ -78,12 +79,12 @@ public class BedService {
 
 
 
-    public List<Bed> getBedsByWard(String wardUid) throws ExecutionException, InterruptedException {
-        return bedRepository.findByWardId(wardUid);
+    public List<Bed> getBedsByWard(String wardId) throws ExecutionException, InterruptedException {
+        return bedRepository.findByWardId(wardId);
     }
-    public void updateBedStatus(String bedUid, boolean isAvailable) throws ExecutionException, InterruptedException {
-        Bed bed = bedRepository.findById(bedUid)
-                .orElseThrow(() -> new RuntimeException("Bed not found with id: " + bedUid));
+    public void updateBedStatus(String bedId, boolean isAvailable) throws ExecutionException, InterruptedException {
+        Bed bed = bedRepository.findById(bedId)
+                .orElseThrow(() -> new RuntimeException("Bed not found with id: " + bedId));
 
         bed.setAvailable(isAvailable);
         bedRepository.save(bed);
@@ -96,6 +97,13 @@ public class BedService {
             ward.setAvailableBeds(ward.getAvailableBeds() - 1);
         }
         wardRepository.save(ward);
+    }
+    public List<Bed> getAllAvailableBeds() throws ExecutionException, InterruptedException {
+        return bedRepository.findByIsAvailable(true);
+    }
+
+    public List<Bed> findAvailableBedsByWardId(String wardId) throws ExecutionException, InterruptedException {
+        return bedRepository.findAvailableBedsByWardId(wardId);
     }
 
 

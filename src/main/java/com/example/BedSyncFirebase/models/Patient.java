@@ -1,15 +1,12 @@
 package com.example.BedSyncFirebase.models;
 
 
-import com.google.cloud.firestore.annotation.DocumentId;
-
 import java.util.Date;
 
 
 public class Patient {
 
-    @DocumentId
-    private String uid;
+    private String id;
 
     private String firstName;
     private String lastName;
@@ -18,8 +15,12 @@ public class Patient {
     private String medicalHistory;
     private String bedId;
 
-    public Patient(String uid, String firstName, String lastName, Date dateOfBirth, String contactInformation, String medicalHistory, String bedId) {
-        this.uid = uid;
+    public Patient() {
+        // Default constructor is needed for Firestore deserialization
+    }
+
+    public Patient(String id, String firstName, String lastName, Date dateOfBirth, String contactInformation, String medicalHistory, String bedId) {
+        this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.dateOfBirth = dateOfBirth;
@@ -28,12 +29,12 @@ public class Patient {
         this.bedId = bedId;
     }
 
-    public String getUid() {
-        return uid;
+    public String getId() {
+        return id;
     }
 
-    public void setUid(String uid) {
-        this.uid = uid;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getFirstName() {
@@ -87,7 +88,7 @@ public class Patient {
     @Override
     public String toString() {
         return "Patient{" +
-                "uid='" + uid + '\'' +
+                "uid='" + id + '\'' +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", dateOfBirth=" + dateOfBirth +
