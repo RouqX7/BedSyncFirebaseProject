@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 @Service
 public class WardService {
@@ -24,20 +23,14 @@ public class WardService {
         return wardRepository.findById(id);
     }
 
-    public Ward saveOrUpdateWard(Ward ward) throws ExecutionException, InterruptedException {
+    public Ward createWard(Ward ward) throws ExecutionException, InterruptedException {
         return wardRepository.save(ward);
+    }
+    public Ward updateWard(Ward ward) throws ExecutionException, InterruptedException{
+        return  wardRepository.updateWard(ward);
     }
 
     public void deleteWard(String id) throws ExecutionException, InterruptedException {
         wardRepository.deleteById(id);
-    }
-
-    //Might add extra logic
-    // Example of a method using custom logic:
-    public List<Ward> getWardsByName(String name) throws ExecutionException, InterruptedException {
-        List<Ward> allWards = wardRepository.findAll();
-        return allWards.stream()
-                .filter(ward -> ward.getName().equals(name))
-                .collect(Collectors.toList());
     }
 }

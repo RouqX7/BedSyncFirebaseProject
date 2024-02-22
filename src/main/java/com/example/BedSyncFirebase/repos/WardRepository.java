@@ -53,6 +53,16 @@ public class WardRepository {
         return ward;
     }
 
+    public Ward updateWard(Ward ward) throws ExecutionException, InterruptedException {
+        DocumentReference wardRef = firestore.collection("wards").document(ward.getId());
+        ApiFuture<WriteResult> updateResult = wardRef.set(ward);
+
+
+
+        return ward;
+    }
+
+
     public void deleteById(String id) throws ExecutionException, InterruptedException {
         CollectionReference wards = firestore.collection("wards");
         ApiFuture<QuerySnapshot> querySnapshot = wards.whereEqualTo("id", id).get();
@@ -61,4 +71,5 @@ public class WardRepository {
             documentSnapshot.getReference().delete();
         }
     }
+
 }

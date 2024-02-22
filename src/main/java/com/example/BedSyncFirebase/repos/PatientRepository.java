@@ -54,6 +54,14 @@ public class PatientRepository {
         return patient;
     }
 
+    public Patient updatePatient(Patient patient) throws ExecutionException,InterruptedException{
+        DocumentReference patientRef = firestore.collection("patients").document(patient.getId());
+        ApiFuture<WriteResult> updateResult = patientRef.set(patient);
+
+
+
+        return patient;    }
+
     public void deleteById(String id) throws ExecutionException, InterruptedException {
         CollectionReference patients = firestore.collection("patients");
         ApiFuture<QuerySnapshot> querySnapshot = patients.whereEqualTo("id", id).get();

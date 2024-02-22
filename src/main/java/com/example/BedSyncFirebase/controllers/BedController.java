@@ -1,14 +1,15 @@
 package com.example.BedSyncFirebase.controllers;
 
 import com.example.BedSyncFirebase.models.Bed;
+import com.example.BedSyncFirebase.models.Ward;
 import com.example.BedSyncFirebase.services.BedService;
 import com.example.BedSyncFirebase.services.WardService;
-import com.example.BedSyncFirebase.states.BedState;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +24,7 @@ public class BedController {
   @Autowired
   private WardService wardService;
 
-    @GetMapping
+    @GetMapping("/all")
     public List<Bed> getAllBeds() throws ExecutionException, InterruptedException {
         return bedService.getAllBeds();
     }
@@ -39,22 +40,46 @@ public class BedController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBed(@PathVariable String id) throws ExecutionException, InterruptedException {
-        bedService.deleteBed(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/{id}/state")
-    public ResponseEntity<?> updateBedState(@PathVariable String id, @RequestParam BedState state) {
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<String> deleteBed(@PathVariable String id, @PathVariable String wardId) {
         try {
+            Optional<Ward> optionalWard = wardService.getWardById(wardId);
+            if (optionalWard.isPresent()) {
+                // Ward exists, update the totalBeds field
+                Ward ward = optionalWard.get();
+                ward.setTotalBeds(ward.getTotalBeds() - 1); // Decrement totalBeds by 1
+                wardService.updateWard(ward); // Update the ward
 
-            bedService.updateBedState(id, state, state);
-            return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException | ExecutionException | InterruptedException e) {
+                // Check if the bed being deleted is available
+                Optional<Bed> optionalBed = Optional.ofNullable(bedService.getBedById(id));
+                if (optionalBed.isPresent() && optionalBed.get().isAvailable()) {
+                    // Decrement the availableBeds field in the associated Ward if the bed is available
+                    ward.setAvailableBeds(ward.getAvailableBeds() - 1);
+                    wardService.updateWard(ward); // Update the ward again
+                }
+            } else {
+                // Ward doesn't exist, handle the error
+                throw new RuntimeException("Ward not found with ID: " + wardId);
+            }
+            bedService.deleteBed(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+
+
+    //    @PatchMapping("/{id}/state")
+//    public ResponseEntity<?> updateBedState(@PathVariable String id, @RequestParam BedState state) {
+//        try {
+//
+//            bedService.updateBedState(id, state, state);
+//            return ResponseEntity.ok().build();
+//        } catch (IllegalArgumentException | ExecutionException | InterruptedException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
     @GetMapping("/available")
     public List<Bed> getAllAvailableBeds() throws ExecutionException, InterruptedException {
         return bedService.getAllAvailableBeds();
@@ -63,17 +88,6 @@ public class BedController {
     @GetMapping("/available/{wardId}")
     public List<Bed> getAvailableBedsByWardId(@PathVariable String wardId) throws ExecutionException, InterruptedException {
         return bedService.findAvailableBedsByWardId(wardId);
-    }
-
-
-    @PatchMapping("/{wardId}/updateAvailableBeds")
-    public ResponseEntity<?> updateWardAvailableBeds(@PathVariable String wardId, @RequestBody BedState newState) {
-        try {
-            bedService.updateAvailableBedsInWard(wardId, newState);
-            return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException | ExecutionException | InterruptedException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
     }
 
     @GetMapping("/wards/{wardId}/beds")
@@ -85,27 +99,49 @@ public class BedController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @PostMapping("/wards/{wardId}/create-bed")
     public ResponseEntity<?> createBedForWard(@PathVariable String wardId, @RequestBody Bed bed) {
         try {
             System.out.println("Ward ID received: " + wardId); // Add this line
+
             bed.setWardId(wardId);  // Associate the bed with the specified wardId
             Bed createdBed = bedService.createBed(bed);
+
+
+            // Update the totalBeds field in the associated Ward
+            Optional<Ward> optionalWard = wardService.getWardById(wardId);
+            if (optionalWard.isPresent()) {
+                // Ward exists, update the totalBeds field
+                Ward ward = optionalWard.get();
+                ward.setTotalBeds(ward.getTotalBeds() + 1); // Increment totalBeds by 1
+                ward.setAvailableBeds(ward.getAvailableBeds() + 1);
+                wardService.updateWard(ward); // Use the update method
+            } else {
+                // Ward doesn't exist, handle the error
+                throw new RuntimeException("Ward not found with ID: " + wardId);
+            }
+
             return ResponseEntity.ok(createdBed);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @PatchMapping("/beds/{bedId}/updateStatus")
-    public ResponseEntity<?> updateBedStatus(@PathVariable String bedId, @RequestParam boolean isAvailable) {
-        try {
-            bedService.updateBedStatus(bedId, isAvailable);
-            return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException | ExecutionException | InterruptedException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
+
+
+
+//    @GetMapping("/beds/{bedId}/occupancy")
+//    public ResponseEntity<?> getOccupancyTimeForBed(@PathVariable String bedId) {
+//        try {
+//            Duration occupancyTime = bedService.getOccupancyTimeForBed(bedId);
+//            return ResponseEntity.ok("Occupancy Time: " + occupancyTime.toHours() + " hours");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body("Error calculating occupancy time: " + e.getMessage());
+//        }
+//    }
+
 
     @GetMapping("/beds/timestamp")
     public ResponseEntity<?> getBedsByTimestampRange(@RequestParam LocalDateTime startTimestamp,
@@ -117,6 +153,7 @@ public class BedController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
 
 
 

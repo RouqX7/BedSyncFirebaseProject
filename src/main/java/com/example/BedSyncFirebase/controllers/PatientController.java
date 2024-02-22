@@ -1,6 +1,7 @@
 package com.example.BedSyncFirebase.controllers;
 
 import com.example.BedSyncFirebase.models.Patient;
+import com.example.BedSyncFirebase.models.Ward;
 import com.example.BedSyncFirebase.services.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -17,7 +19,7 @@ public class PatientController {
     @Autowired
     private PatientService patientService;
 
-    @PostMapping("/register")
+    @PostMapping("/create-patient")
     public ResponseEntity<Patient> registerNewPatient(@RequestBody Patient patient) {
         try {
             Patient registeredPatient = patientService.registerPatient(patient);
@@ -51,7 +53,7 @@ public class PatientController {
     @PutMapping("/{id}")
     public ResponseEntity<Patient> updatePatient(@PathVariable String id, @RequestBody Patient updatedPatient) {
         try {
-            return ResponseEntity.ok(patientService.saveOrUpdatePatient(updatedPatient));
+            return ResponseEntity.ok(patientService.save(updatedPatient));
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.badRequest().body(null);
         }
@@ -67,23 +69,41 @@ public class PatientController {
         }
     }
 
-    @PostMapping("/{uid}/assign/{bedId}")
-    public ResponseEntity<Patient> assignPatientToBed(@PathVariable String id, @PathVariable String bedId) {
+    @PostMapping("/{patientId}/{bedId}/assign-bed")
+    public ResponseEntity<?> assignPatientToBed(@PathVariable String patientId, @PathVariable String bedId,@PathVariable String wardId)  {
         try {
-            Patient patient = patientService.assignPatientToBed(id, bedId);
-            return ResponseEntity.ok(patient);
-        } catch (ExecutionException | InterruptedException e) {
-            return ResponseEntity.badRequest().body(null);
+            patientService.assignPatientToBed (patientId, bedId,wardId);
+            return ResponseEntity.ok().build();
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error assigning patient to bed: " + e.getMessage());
         }
     }
 
-    @PostMapping("/{uid}/unassign")
-    public ResponseEntity<Patient> unAssignPatientFromBed(@PathVariable String id) {
+    @PostMapping("/{patientId}/discharge")
+    public ResponseEntity<?> dischargePatient(@PathVariable String patientId) {
         try {
-            Patient patient = patientService.unassignPatientFromBed(id);
-            return ResponseEntity.ok(patient);
-        } catch (ExecutionException | InterruptedException e) {
-            return ResponseEntity.badRequest().body(null);
+            patientService.dischargePatient(patientId);
+            return ResponseEntity.ok().build();
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error discharging patient: " + e.getMessage());
         }
     }
+
+
+
+//    @PostMapping("/{patientId}/unassign-bed")
+//    public ResponseEntity<?> unassignPatientFromBed(@PathVariable String patientId) {
+//        try {
+//            Patient patient = patientService.unassignPatientFromBed(patientId);
+//            return ResponseEntity.ok(patient);
+//        } catch (NoSuchElementException e) {
+//            return ResponseEntity.notFound().build();
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error unassigning patient from bed: " + e.getMessage());
+//        }
+//    }
 }

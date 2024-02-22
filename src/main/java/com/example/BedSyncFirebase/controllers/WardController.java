@@ -49,7 +49,7 @@ public class WardController {
     @PostMapping("/create-ward")
     public ResponseEntity<?> createWard(@RequestBody Ward ward) {
         try {
-            return ResponseEntity.ok(wardService.saveOrUpdateWard(ward));
+            return ResponseEntity.ok(wardService.createWard(ward));
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.badRequest().body("Error creating ward: " + e.getMessage());
         }
@@ -62,7 +62,7 @@ public class WardController {
                     .map(existingWard -> {
                         ward.setId(wardId);
                         try {
-                            return ResponseEntity.ok(wardService.saveOrUpdateWard(ward));
+                            return ResponseEntity.ok(wardService.updateWard(ward));
                         } catch (ExecutionException | InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -75,15 +75,16 @@ public class WardController {
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteWard(@PathVariable String uid) {
+    public ResponseEntity<?> deleteWard(@PathVariable String id) {
         try {
-            wardService.deleteWard(uid);
+            wardService.deleteWard(id);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error deleting ward: " + e.getMessage());
         }
     }
 
-    // Other methods...
+
+
 
 }
