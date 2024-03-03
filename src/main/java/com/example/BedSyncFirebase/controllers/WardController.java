@@ -17,7 +17,7 @@ public class WardController {
     @Autowired
     private WardService wardService;
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<?> getAllWards() {
         try {
             List<Ward> wards = wardService.getAllWards();
@@ -26,6 +26,8 @@ public class WardController {
             return ResponseEntity.badRequest().body("Error fetching wards: " + e.getMessage());
         }
     }
+
+
 
     @GetMapping("/{wardId}")
     public ResponseEntity<?> getWardById(@PathVariable String wardId) {

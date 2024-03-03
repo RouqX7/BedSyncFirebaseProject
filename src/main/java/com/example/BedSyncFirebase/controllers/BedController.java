@@ -90,7 +90,7 @@ public class BedController {
         return bedService.findAvailableBedsByWardId(wardId);
     }
 
-    @GetMapping("/wards/{wardId}/beds")
+    @GetMapping("/wards/{wardId}/bedsInWard")
     public ResponseEntity<?> getBedsByWard(@PathVariable String wardId) {
         try {
             List<Bed> beds = bedService.getBedsByWard(wardId);

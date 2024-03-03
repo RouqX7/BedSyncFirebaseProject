@@ -60,8 +60,18 @@ public class PatientService {
     }
 
     public void assignPatientToBed(String patientId, String bedId, String wardId) throws ExecutionException, InterruptedException {
+        // Get patient by ID
         Patient patient = getPatientById(patientId).orElseThrow(() -> new NoSuchElementException("Patient not found"));
+
+        // Check if patient is already admitted
+        if (patient.getAdmitted()) {
+            throw new IllegalStateException("Patient is already admitted and cannot be assigned to another bed.");
+        }
+
+        // Get bed by ID
         Bed bed = bedService.getBedById(bedId);
+
+        // Get ward by ID
         Ward ward = wardService.getWardById(wardId).orElseThrow(() -> new NoSuchElementException("Ward not found"));
 
         // Update patient's bed assignment and admission date
@@ -82,27 +92,32 @@ public class PatientService {
     }
 
 
-    public void dischargePatient(String patientId) throws ExecutionException, InterruptedException {
-        Optional<Patient> optionalPatient = patientRepository.findById(patientId);
-        if (optionalPatient.isPresent()) {
-            Patient patient = optionalPatient.get();
-            patient.setAdmitted(false); // Set admitted flag to false
-            patient.setDischargeDate(LocalDateTime.now()); // Set current time as discharge date
-            patientRepository.save(patient);
 
-            // Set bed availability to true
-            String bedId = patient.getBedId();
-            Bed bed = bedRepository.findById(bedId).orElse(null);
-            if (bed != null) {
-                bed.setAvailable(true); // Set availability to true (available)
-                bed.setDischargeDate(LocalDateTime.now());
-                bed.setPatientId("null");
-                bedRepository.save(bed);
-            }
-        } else {
-            throw new NoSuchElementException("Patient not found");
+
+    public void dischargePatient(String patientId) throws ExecutionException, InterruptedException {
+        // Retrieve patient by ID
+        Patient patient = getPatientById(patientId).orElseThrow(() -> new NoSuchElementException("Patient not found"));
+
+        // Verify patient-bed association
+        String bedId = patient.getBedId();
+        Bed bed = bedService.getBedById(bedId);
+        if (!bed.getPatientId().equals(patientId)) {
+            throw new IllegalStateException("Selected patient does not match the patient assigned to the bed.");
         }
+
+        // Perform discharge action
+        // Update patient's discharge date and admitted flag
+        patient.setDischargeDate(LocalDateTime.now());
+        patient.setAdmitted(false);
+        update(patient);
+
+        // Update bed state and availability
+        bed.setAvailable(true);
+        bed.setDischargeDate(LocalDateTime.now());
+        bed.setPatientId(null);
+        bedRepository.updateBed(bed);
     }
+
 
 
 
