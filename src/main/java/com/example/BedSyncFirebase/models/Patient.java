@@ -21,6 +21,7 @@ public class Patient {
     private String medicalHistory;
     private String bedId;
     private Boolean admitted;
+    private boolean inNeedOfBed =true;
 
     public Patient() {
         // Default constructor is needed for Firestore deserialization

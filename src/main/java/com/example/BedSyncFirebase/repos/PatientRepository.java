@@ -1,5 +1,6 @@
 package com.example.BedSyncFirebase.repos;
 
+import com.example.BedSyncFirebase.models.Bed;
 import com.example.BedSyncFirebase.models.Patient;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
@@ -43,24 +44,32 @@ public class PatientRepository {
         }
     }
 
+    public List<Patient> findByIsInNeedOfBed(boolean inNeedOfBed) throws ExecutionException, InterruptedException {
+        CollectionReference patients = firestore.collection("patients");
+        QuerySnapshot querySnapshot = patients.whereEqualTo("inNeedOfBed", inNeedOfBed).get().get();
+
+        List<Patient> PatientList = new ArrayList<>();
+        for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
+            Patient patient = document.toObject(Patient.class);
+            PatientList.add(patient);
+        }
+
+        return PatientList;
+    }
+
 
     public Patient save(Patient patient) throws ExecutionException, InterruptedException {
         CollectionReference patients = firestore.collection("patients");
         ApiFuture<DocumentReference> result = patients.add(patient);
-
-        // Optionally, you can set the generated ID back to the Patient object
-        // patient.setId(result.get().getId());
-
         return patient;
     }
 
-    public Patient updatePatient(Patient patient) throws ExecutionException,InterruptedException{
+    public void updatePatient(Patient patient) throws ExecutionException,InterruptedException{
         DocumentReference patientRef = firestore.collection("patients").document(patient.getId());
         ApiFuture<WriteResult> updateResult = patientRef.set(patient);
 
 
-
-        return patient;    }
+    }
 
     public void deleteById(String id) throws ExecutionException, InterruptedException {
         CollectionReference patients = firestore.collection("patients");

@@ -1,5 +1,6 @@
 package com.example.BedSyncFirebase.controllers;
 
+import com.example.BedSyncFirebase.models.Bed;
 import com.example.BedSyncFirebase.models.Patient;
 import com.example.BedSyncFirebase.models.Ward;
 import com.example.BedSyncFirebase.services.PatientService;
@@ -69,6 +70,11 @@ public class PatientController {
         }
     }
 
+    @GetMapping("/inNeedOfBed")
+    public List<Patient> getAllAvailableBeds() throws ExecutionException, InterruptedException {
+        return patientService.findByIsInNeedOfBed();
+    }
+
     @PostMapping("/{patientId}/{bedId}/assign-bed")
     public ResponseEntity<?> assignPatientToBed(@PathVariable String patientId, @PathVariable String bedId,@PathVariable String wardId)  {
         try {
@@ -82,9 +88,9 @@ public class PatientController {
     }
 
     @PostMapping("/{patientId}/discharge")
-    public ResponseEntity<?> dischargePatient(@PathVariable String patientId) {
+    public ResponseEntity<?> dischargePatient(@PathVariable String patientId, @PathVariable String wardId) {
         try {
-            patientService.dischargePatient(patientId);
+            patientService.dischargePatient(patientId,wardId);
             return ResponseEntity.ok().build();
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
@@ -93,17 +99,4 @@ public class PatientController {
         }
     }
 
-
-
-//    @PostMapping("/{patientId}/unassign-bed")
-//    public ResponseEntity<?> unassignPatientFromBed(@PathVariable String patientId) {
-//        try {
-//            Patient patient = patientService.unassignPatientFromBed(patientId);
-//            return ResponseEntity.ok(patient);
-//        } catch (NoSuchElementException e) {
-//            return ResponseEntity.notFound().build();
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error unassigning patient from bed: " + e.getMessage());
-//        }
-//    }
 }

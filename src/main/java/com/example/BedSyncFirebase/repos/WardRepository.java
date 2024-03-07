@@ -46,19 +46,12 @@ public class WardRepository {
     public Ward save(Ward ward) throws ExecutionException, InterruptedException {
         CollectionReference wards = firestore.collection("wards");
         ApiFuture<DocumentReference> result = wards.add(ward);
-
-        // Optionally, you can set the generated ID back to the Ward object
-        // ward.setId(result.get().getId());
-
         return ward;
     }
 
     public Ward updateWard(Ward ward) throws ExecutionException, InterruptedException {
         DocumentReference wardRef = firestore.collection("wards").document(ward.getId());
         ApiFuture<WriteResult> updateResult = wardRef.set(ward);
-
-
-
         return ward;
     }
 

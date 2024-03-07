@@ -9,9 +9,7 @@ import com.example.BedSyncFirebase.repos.PatientRepository;
 import com.example.BedSyncFirebase.repos.WardRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 
-import java.security.PublicKey;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -51,12 +49,16 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
-    public Patient update(Patient patient) throws ExecutionException,InterruptedException{
-        return patientRepository.updatePatient(patient);
+    public void update(Patient patient) throws ExecutionException,InterruptedException{
+        patientRepository.updatePatient(patient);
     }
 
     public void deletePatient(String id) throws ExecutionException, InterruptedException {
         patientRepository.deleteById(id);
+    }
+
+    public List<Patient> findByIsInNeedOfBed() throws ExecutionException,InterruptedException{
+        return patientRepository.findByIsInNeedOfBed(true);
     }
 
     public void assignPatientToBed(String patientId, String bedId, String wardId) throws ExecutionException, InterruptedException {
@@ -78,6 +80,7 @@ public class PatientService {
         patient.setBedId(bedId);
         patient.setAdmissionDate(LocalDateTime.now());
         patient.setAdmitted(true);
+        patient.setInNeedOfBed(false);
         update(patient);
 
         // Update bed state and availability
@@ -88,19 +91,22 @@ public class PatientService {
 
         // Update available beds count in the ward
         ward.setAvailableBeds(ward.getAvailableBeds() - 1);
+        ward.setCurrentOccupancy(ward.getCurrentOccupancy() +1);
         wardRepository.updateWard(ward);
     }
 
 
 
 
-    public void dischargePatient(String patientId) throws ExecutionException, InterruptedException {
+    public void dischargePatient(String patientId,String wardId) throws ExecutionException, InterruptedException {
         // Retrieve patient by ID
         Patient patient = getPatientById(patientId).orElseThrow(() -> new NoSuchElementException("Patient not found"));
 
         // Verify patient-bed association
         String bedId = patient.getBedId();
         Bed bed = bedService.getBedById(bedId);
+        Ward ward = wardService.getWardById(wardId).orElseThrow(() -> new NoSuchElementException("Ward not found"));
+
         if (!bed.getPatientId().equals(patientId)) {
             throw new IllegalStateException("Selected patient does not match the patient assigned to the bed.");
         }
@@ -109,6 +115,7 @@ public class PatientService {
         // Update patient's discharge date and admitted flag
         patient.setDischargeDate(LocalDateTime.now());
         patient.setAdmitted(false);
+        patient.setInNeedOfBed(true);
         update(patient);
 
         // Update bed state and availability
@@ -116,38 +123,14 @@ public class PatientService {
         bed.setDischargeDate(LocalDateTime.now());
         bed.setPatientId(null);
         bedRepository.updateBed(bed);
+
+        //Update the ward
+        ward.setAvailableBeds(ward.getAvailableBeds() +1);
+        ward.setCurrentOccupancy(ward.getCurrentOccupancy() -1);
+        wardRepository.updateWard(ward);
+
+
+
     }
-
-
-
-
-
-//    public Patient unassignPatientFromBed(String patientId) throws ExecutionException, InterruptedException {
-//        Patient patient = getPatientById(patientId).orElse(null);
-//
-//        if (patient == null || patient.getBedId() == null) {
-//            throw new NoSuchElementException("Patient not found or not assigned to a bed");
-//        }
-//
-//        Bed bed = bedService.getBedById(patient.getBedId());
-//
-//        if (bed == null) {
-//            throw new NoSuchElementException("Bed not found");
-//        }
-//
-//        // Update patient's bed assignment
-//        patient.setBedId(null);
-//        saveOrUpdatePatient(patient);
-//
-//        // Update bed state and availability
-//        bed.setPatientId(null);
-//        bed.setState(new AvailableState()); // Set bed state to available
-//        bed.setAvailable(true); // Set availability to true (available)
-//        bedRepository.save(bed);
-//
-//        return patient;
-//    }
-
-
 
 }

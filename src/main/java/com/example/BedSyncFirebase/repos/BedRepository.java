@@ -126,13 +126,13 @@ public class BedRepository {
         return bedList;
     }
 
-    public List<Bed> findByIsAvailable(boolean available) throws ExecutionException, InterruptedException {
-        CollectionReference beds = firestore.collection("beds");
-        QuerySnapshot querySnapshot = beds.whereEqualTo("available", available).get().get();
+     public List<Bed> findByIsAvailable(boolean available) throws ExecutionException, InterruptedException {
+                CollectionReference beds = firestore.collection("beds");
+                QuerySnapshot querySnapshot = beds.whereEqualTo("available", available).get().get();
 
-        List<Bed> bedList = new ArrayList<>();
-        for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
-            Bed bed = document.toObject(Bed.class);
+                List<Bed> bedList = new ArrayList<>();
+                for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
+                    Bed bed =document.toObject(Bed.class);
             bedList.add(bed);
         }
 

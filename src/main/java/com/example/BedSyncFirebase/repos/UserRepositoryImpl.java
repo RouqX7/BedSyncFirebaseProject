@@ -33,17 +33,19 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findById(String id) throws ExecutionException, InterruptedException {
-        CollectionReference users = firestore.collection("users");
-        ApiFuture<QuerySnapshot> querySnapshot = users.whereEqualTo("id", id).get();
+        DocumentReference docRef = firestore.collection("users").document(id);
+        ApiFuture<DocumentSnapshot> future = docRef.get();
+        DocumentSnapshot document = future.get();
 
-        if (!querySnapshot.get().isEmpty()) {
-            QueryDocumentSnapshot documentSnapshot = querySnapshot.get().getDocuments().get(0);
-            User user = documentSnapshot.toObject(User.class);
+        if (document.exists()) {
+            User user = document.toObject(User.class);
+            assert user != null;
             return Optional.of(user);
         } else {
             return Optional.empty();
         }
     }
+
 
     @Override
     public User save(User user) throws ExecutionException, InterruptedException {
