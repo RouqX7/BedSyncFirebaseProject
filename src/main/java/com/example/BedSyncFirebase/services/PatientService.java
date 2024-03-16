@@ -73,6 +73,11 @@ public class PatientService {
         // Get bed by ID
         Bed bed = bedService.getBedById(bedId);
 
+        // Check if bed is dirty
+        if (!bed.isClean()) {
+            throw new IllegalStateException("Bed is dirty and cannot be assigned to a patient.");
+        }
+
         // Get ward by ID
         Ward ward = wardService.getWardById(wardId).orElseThrow(() -> new NoSuchElementException("Ward not found"));
 
@@ -87,18 +92,21 @@ public class PatientService {
         bed.setPatientId(patientId);
         bed.setAvailable(false);
         bed.setAdmissionDate(LocalDateTime.now());
+        bed.setClean(false); // Set bed as dirty
         bedRepository.updateBed(bed);
 
         // Update available beds count in the ward
         ward.setAvailableBeds(ward.getAvailableBeds() - 1);
-        ward.setCurrentOccupancy(ward.getCurrentOccupancy() +1);
+        ward.setCurrentOccupancy(ward.getCurrentOccupancy() + 1);
         wardRepository.updateWard(ward);
     }
 
 
 
 
-    public void dischargePatient(String patientId,String wardId) throws ExecutionException, InterruptedException {
+
+
+    public void dischargePatient(String patientId, String wardId) throws ExecutionException, InterruptedException {
         // Retrieve patient by ID
         Patient patient = getPatientById(patientId).orElseThrow(() -> new NoSuchElementException("Patient not found"));
 
@@ -119,18 +127,18 @@ public class PatientService {
         update(patient);
 
         // Update bed state and availability
+        bed.setClean(false);
         bed.setAvailable(true);
         bed.setDischargeDate(LocalDateTime.now());
         bed.setPatientId(null);
         bedRepository.updateBed(bed);
 
-        //Update the ward
-        ward.setAvailableBeds(ward.getAvailableBeds() +1);
-        ward.setCurrentOccupancy(ward.getCurrentOccupancy() -1);
+        // Update the ward
+        ward.setAvailableBeds(ward.getAvailableBeds() + 1);
+        ward.setCurrentOccupancy(ward.getCurrentOccupancy() - 1);
         wardRepository.updateWard(ward);
-
-
-
     }
+
+
 
 }

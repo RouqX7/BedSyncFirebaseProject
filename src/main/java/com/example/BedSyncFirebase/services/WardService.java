@@ -1,5 +1,6 @@
 package com.example.BedSyncFirebase.services;
 
+import com.example.BedSyncFirebase.models.Patient;
 import com.example.BedSyncFirebase.models.Ward;
 import com.example.BedSyncFirebase.repos.WardRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,4 +34,8 @@ public class WardService {
     public void deleteWard(String id) throws ExecutionException, InterruptedException {
         wardRepository.deleteById(id);
     }
+
+
+
+
 }

@@ -1,5 +1,6 @@
 package com.example.BedSyncFirebase.repos;
 
+import com.example.BedSyncFirebase.models.Patient;
 import com.example.BedSyncFirebase.models.Ward;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
@@ -64,5 +65,18 @@ public class WardRepository {
             documentSnapshot.getReference().delete();
         }
     }
+//    public List<Ward> findCurrentOccupancy(int currentOccupancy) throws ExecutionException, InterruptedException {
+//        CollectionReference wards = firestore.collection("wards");
+//        QuerySnapshot querySnapshot = wards.whereEqualTo("currentOccupancy", currentOccupancy).get().get();
+//
+//        List<Ward> wardList = new ArrayList<>();
+//        for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
+//            Ward ward = document.toObject(Ward.class);
+//            wardList.add(ward);
+//        }
+//
+//        return wardList;
+//    }
+
 
 }

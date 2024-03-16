@@ -40,7 +40,7 @@ public class BedController {
         }
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/delete/{id}/{wardId} ")
     public ResponseEntity<String> deleteBed(@PathVariable String id, @PathVariable String wardId) {
         try {
             Optional<Ward> optionalWard = wardService.getWardById(wardId);
@@ -61,7 +61,7 @@ public class BedController {
                 // Ward doesn't exist, handle the error
                 throw new RuntimeException("Ward not found with ID: " + wardId);
             }
-            bedService.deleteBed(id);
+            bedService.deleteBed(id,wardId);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -70,20 +70,22 @@ public class BedController {
 
 
 
-    //    @PatchMapping("/{id}/state")
-//    public ResponseEntity<?> updateBedState(@PathVariable String id, @RequestParam BedState state) {
-//        try {
-//
-//            bedService.updateBedState(id, state, state);
-//            return ResponseEntity.ok().build();
-//        } catch (IllegalArgumentException | ExecutionException | InterruptedException e) {
-//            return ResponseEntity.badRequest().body(e.getMessage());
-//        }
-//    }
     @GetMapping("/available")
     public List<Bed> getAllAvailableBeds() throws ExecutionException, InterruptedException {
         return bedService.getAllAvailableBeds();
     }
+
+    @GetMapping("/dirty")
+    public List<Bed> getDirtyBeds() throws ExecutionException, InterruptedException {
+        return bedService.getDirtyBeds();
+    }
+
+    @GetMapping("/clean")
+    public List<Bed> getCleanBeds() throws ExecutionException, InterruptedException {
+        return bedService.getCleanBeds();
+    }
+
+
 
     @GetMapping("/available/{wardId}")
     public List<Bed> getAvailableBedsByWardId(@PathVariable String wardId) throws ExecutionException, InterruptedException {
@@ -152,6 +154,19 @@ public class BedController {
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @PutMapping("/{bedId}/markClean")
+    public ResponseEntity<?> markBedAsClean(@PathVariable String bedId) throws ExecutionException, InterruptedException {
+        bedService.markAsClean(bedId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{bedId}/markDirty")
+    public ResponseEntity<?> markBedAsDirty(@PathVariable String bedId) throws ExecutionException, InterruptedException {
+        bedService.markAsDirty(bedId);
+
+        return ResponseEntity.ok().build();
     }
 
 

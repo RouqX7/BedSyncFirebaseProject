@@ -1,6 +1,6 @@
 package com.example.BedSyncFirebase.models;
-
-import com.example.BedSyncFirebase.states.BedState;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.cloud.firestore.annotation.DocumentId;
 import lombok.*;
 
@@ -17,8 +17,8 @@ public class Bed {
     private boolean isAvailable = true;
     private String bedNumber;
     private String bedType;
-    private BedState state;
     private String patientId;
+    private boolean isClean = true;
     private LocalDateTime admissionDate;
     private LocalDateTime dischargeDate;
     private LocalDateTime timestamp;
@@ -26,5 +26,4 @@ public class Bed {
     public Bed(){
 
     }
-
 }
