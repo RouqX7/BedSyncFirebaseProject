@@ -1,6 +1,8 @@
 package com.example.BedSyncFirebase.controllers;
 
+import com.example.BedSyncFirebase.models.Bed;
 import com.example.BedSyncFirebase.models.Ward;
+import com.example.BedSyncFirebase.services.BedService;
 import com.example.BedSyncFirebase.services.WardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,9 @@ public class WardController {
 
     @Autowired
     private WardService wardService;
+
+    @Autowired
+    private BedService bedService;
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllWards() {
@@ -86,6 +91,20 @@ public class WardController {
         }
     }
 
+
+    @GetMapping("/wards/{wardId}")
+    public ResponseEntity<Ward> getWard(@PathVariable String wardId) throws ExecutionException, InterruptedException {
+        return wardService.getWardById(wardId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // Endpoint to fetch beds for a specific ward
+    @GetMapping("/wards/{wardId}/beds")
+    public ResponseEntity<List<Bed>> getBedsByWard(@PathVariable String wardId) throws ExecutionException, InterruptedException {
+        List<Bed> beds = bedService.getBedsByWard(wardId);
+        return ResponseEntity.ok(beds);
+    }
 
 
 

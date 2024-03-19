@@ -1,9 +1,7 @@
 package com.example.BedSyncFirebase.controllers;
 
-import com.example.BedSyncFirebase.models.Bed;
-import com.example.BedSyncFirebase.models.Ward;
-import com.example.BedSyncFirebase.services.BedService;
-import com.example.BedSyncFirebase.services.WardService;
+import com.example.BedSyncFirebase.models.Hospital;
+import com.example.BedSyncFirebase.services.HospitalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,29 +10,61 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @RestController
-@RequestMapping("/api/hospital/")
+@RequestMapping("/api/hospitals")
 public class HospitalController {
 
     @Autowired
-    private WardService wardService;
+    private HospitalService hospitalService;
 
-    @Autowired
-    private BedService bedService;
-
-    // Endpoint to fetch a specific ward
-    @GetMapping("/wards/{wardId}")
-    public ResponseEntity<Ward> getWard(@PathVariable String wardId) throws ExecutionException, InterruptedException {
-        return wardService.getWardById(wardId)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    @GetMapping
+    public ResponseEntity<List<Hospital>> getAllHospitals() {
+        try {
+            List<Hospital> hospitals = hospitalService.getAllHospitals();
+            return ResponseEntity.ok(hospitals);
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
-    // Endpoint to fetch beds for a specific ward
-    @GetMapping("/wards/{wardId}/beds")
-    public ResponseEntity<List<Bed>> getBedsByWard(@PathVariable String wardId) throws ExecutionException, InterruptedException {
-        List<Bed> beds = bedService.getBedsByWard(wardId);
-        return ResponseEntity.ok(beds);
+    @GetMapping("/{id}")
+    public ResponseEntity<Hospital> getHospitalById(@PathVariable String id) {
+        try {
+            return hospitalService.getHospitalById(id)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
-    // Other endpoints...
+    @PostMapping
+    public ResponseEntity<Hospital> createHospital(@RequestBody Hospital hospital) {
+        try {
+            Hospital createdHospital = hospitalService.createHospital(hospital);
+            return ResponseEntity.ok(createdHospital);
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Hospital> updateHospital(@PathVariable String id, @RequestBody Hospital hospital) {
+        try {
+            hospital.setId(id);
+            Hospital updatedHospital = hospitalService.updateHospital(hospital);
+            return ResponseEntity.ok(updatedHospital);
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteHospital(@PathVariable String id) {
+        try {
+            hospitalService.deleteHospital(id);
+            return ResponseEntity.ok().build();
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
 }

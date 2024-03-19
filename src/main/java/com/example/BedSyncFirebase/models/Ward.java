@@ -10,8 +10,10 @@ import java.time.LocalDateTime;
 public  class Ward {
 
     @DocumentId
-    protected String id; // Unique identifier for the ward
+    protected String id;
     protected String name; // Ward name
+    protected String hospitalId;
+    protected String location;
     protected int capacity;
     protected String description;
     protected String status;

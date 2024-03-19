@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -83,7 +85,7 @@ public class PatientService {
 
         // Update patient's bed assignment and admission date
         patient.setBedId(bedId);
-        patient.setAdmissionDate(LocalDateTime.now());
+        patient.setAdmissionDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
         patient.setAdmitted(true);
         patient.setInNeedOfBed(false);
         update(patient);
@@ -91,9 +93,8 @@ public class PatientService {
         // Update bed state and availability
         bed.setPatientId(patientId);
         bed.setAvailable(false);
-        bed.setAdmissionDate(LocalDateTime.now());
-        bed.setClean(false); // Set bed as dirty
-        bedRepository.updateBed(bed);
+        bed.setAdmissionDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
+         bedRepository.updateBed(bed);
 
         // Update available beds count in the ward
         ward.setAvailableBeds(ward.getAvailableBeds() - 1);
@@ -121,7 +122,7 @@ public class PatientService {
 
         // Perform discharge action
         // Update patient's discharge date and admitted flag
-        patient.setDischargeDate(LocalDateTime.now());
+        patient.setDischargeDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
         patient.setAdmitted(false);
         patient.setInNeedOfBed(true);
         update(patient);
@@ -129,7 +130,7 @@ public class PatientService {
         // Update bed state and availability
         bed.setClean(false);
         bed.setAvailable(true);
-        bed.setDischargeDate(LocalDateTime.now());
+        bed.setDischargeDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
         bed.setPatientId(null);
         bedRepository.updateBed(bed);
 

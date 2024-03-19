@@ -75,7 +75,7 @@ public class PatientController {
         return patientService.findByIsInNeedOfBed();
     }
 
-    @PostMapping("/{patientId}/{bedId}/assign-bed")
+    @PostMapping("/{patientId}/{bedId}/{wardId}/assign-bed")
     public ResponseEntity<?> assignPatientToBed(@PathVariable String patientId, @PathVariable String bedId,@PathVariable String wardId)  {
         try {
             patientService.assignPatientToBed (patientId, bedId,wardId);
@@ -87,7 +87,7 @@ public class PatientController {
         }
     }
 
-    @PostMapping("/{patientId}/discharge")
+    @PostMapping("/{patientId}/{wardId}discharge") //I need to check to remove the BedId
     public ResponseEntity<?> dischargePatient(@PathVariable String patientId, @PathVariable String wardId) {
         try {
             patientService.dischargePatient(patientId,wardId);
