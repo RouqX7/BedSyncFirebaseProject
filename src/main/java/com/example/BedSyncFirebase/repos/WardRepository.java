@@ -31,18 +31,25 @@ public class WardRepository {
         return wardList;
     }
 
-    public Optional<Ward> findById(String id) throws ExecutionException, InterruptedException {
+    public Optional<Ward> findById(String id) {
         DocumentReference docRef = firestore.collection("wards").document(id);
-        ApiFuture<DocumentSnapshot> documentSnapshot = docRef.get();
+        try {
+            ApiFuture<DocumentSnapshot> documentSnapshot = docRef.get();
+            DocumentSnapshot snapshot = documentSnapshot.get();
 
-        if (documentSnapshot.get().exists()) {
-            Ward ward = documentSnapshot.get().toObject(Ward.class);
-            assert ward != null;
-            return Optional.of(ward);
-        } else {
+            if (snapshot.exists()) {
+                Ward ward = snapshot.toObject(Ward.class);
+                return Optional.ofNullable(ward);
+            } else {
+                return Optional.empty();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            // Properly handle exceptions, such as logging or throwing a custom exception
+            e.printStackTrace();
             return Optional.empty();
         }
     }
+
 
     public Ward save(Ward ward) throws ExecutionException, InterruptedException {
         CollectionReference wards = firestore.collection("wards");
@@ -64,6 +71,18 @@ public class WardRepository {
         for (QueryDocumentSnapshot documentSnapshot : querySnapshot.get().getDocuments()) {
             documentSnapshot.getReference().delete();
         }
+    }
+    public List<Ward> findByHospitalId(String hospitalId) throws ExecutionException, InterruptedException {
+        CollectionReference wards = firestore.collection("wards");
+        List<Ward> wardList = new ArrayList<>();
+
+        ApiFuture<QuerySnapshot> querySnapshot = wards.whereEqualTo("hospitalId", hospitalId).get();
+        for (QueryDocumentSnapshot documentSnapshot : querySnapshot.get().getDocuments()) {
+            Ward ward = documentSnapshot.toObject(Ward.class);
+            wardList.add(ward);
+        }
+
+        return wardList;
     }
 //    public List<Ward> findCurrentOccupancy(int currentOccupancy) throws ExecutionException, InterruptedException {
 //        CollectionReference wards = firestore.collection("wards");

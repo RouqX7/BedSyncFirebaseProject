@@ -32,6 +32,17 @@ public class WardController {
         }
     }
 
+    @GetMapping("/hospitals/{hospitalId}/wards")
+    public ResponseEntity<String> getWardsByHospital(@PathVariable String hospitalId) {
+        try {
+            List<Ward> wards = wardService.getWardsByHospital(hospitalId);
+            return ResponseEntity.ok(wards.toString());
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.badRequest().body("Error fetching wards by hospital ID: " + e.getMessage());
+        }
+    }
+
+
 
 
     @GetMapping("/{wardId}")
@@ -53,14 +64,15 @@ public class WardController {
     }
 
 
-    @PostMapping("/create-ward")
-    public ResponseEntity<?> createWard(@RequestBody Ward ward) {
+    @PostMapping("/create-ward/{hospitalId}")
+    public ResponseEntity<?> createWard(@PathVariable String hospitalId, @RequestBody Ward ward) {
         try {
-            return ResponseEntity.ok(wardService.createWard(ward));
+            return ResponseEntity.ok(wardService.createWard(hospitalId, ward));
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.badRequest().body("Error creating ward: " + e.getMessage());
         }
     }
+
 
     @PutMapping("/{wardId}")
     public ResponseEntity<?> updateWard(@PathVariable String wardId, @RequestBody Ward ward) {

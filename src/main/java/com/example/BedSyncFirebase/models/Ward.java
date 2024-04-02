@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 
 @Data
-public  class Ward {
+public class Ward {
 
     @DocumentId
     protected String id;
@@ -16,12 +16,10 @@ public  class Ward {
     protected String location;
     protected int capacity;
     protected String description;
-    protected String status;
     protected int currentOccupancy;
     protected String responsibleDepartment;
     protected int totalBeds;
     protected int availableBeds;
-    protected LocalDateTime timestamp;
 
     public Ward(){
 

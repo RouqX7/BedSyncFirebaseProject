@@ -33,6 +33,23 @@ public class UserController {
         }
     }
 
+    @GetMapping("/findByEmail")
+    public ResponseEntity<User> findUserByEmail(@RequestParam String email) {
+        try {
+            Optional<User> optionalUser = userService.findUserByEmail(email);
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                return ResponseEntity.ok(user);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+
+
     @GetMapping("/{uid}")
     public ResponseEntity<User> getUserByUid(@PathVariable String uid) {
         try {
@@ -42,6 +59,21 @@ public class UserController {
             return ResponseEntity.badRequest().body(null);
         }
     }
+
+    @GetMapping("/api/users/hospitalIdByEmail")
+    public ResponseEntity<String> getHospitalIdByEmail(@RequestParam String email) {
+        try {
+            String hospitalId = userService.getHospitalIdByEmail(email);
+            if (hospitalId != null) {
+                return ResponseEntity.ok(hospitalId);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
 
 
     @PostMapping("/register")

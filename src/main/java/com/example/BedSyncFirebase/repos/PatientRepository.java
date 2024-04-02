@@ -2,6 +2,7 @@ package com.example.BedSyncFirebase.repos;
 
 import com.example.BedSyncFirebase.models.Bed;
 import com.example.BedSyncFirebase.models.Patient;
+import com.example.BedSyncFirebase.models.Ward;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,15 +32,21 @@ public class PatientRepository {
         return patientList;
     }
 
-    public Optional<Patient> findById(String id) throws ExecutionException, InterruptedException {
+    public Optional<Patient> findById(String id) {
         DocumentReference docRef = firestore.collection("patients").document(id);
-        ApiFuture<DocumentSnapshot> documentSnapshot = docRef.get();
+        try {
+            ApiFuture<DocumentSnapshot> documentSnapshot = docRef.get();
+            DocumentSnapshot snapshot = documentSnapshot.get();
 
-        if (documentSnapshot.get().exists()) {
-            Patient patient = documentSnapshot.get().toObject(Patient.class);
-            assert patient != null;
-            return Optional.of(patient);
-        } else {
+            if (snapshot.exists()) {
+                Patient patient = snapshot.toObject(Patient.class);
+                return Optional.ofNullable(patient);
+            } else {
+                return Optional.empty();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            // Properly handle exceptions, such as logging or throwing a custom exception
+            e.printStackTrace();
             return Optional.empty();
         }
     }

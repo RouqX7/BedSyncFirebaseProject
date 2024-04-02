@@ -19,8 +19,16 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    public Optional<User> findUserByEmail(String email) throws ExecutionException, InterruptedException {
+        return userRepository.findByEmail(email);
+    }
+
     public Optional<User> getUserByUid(String uid) throws ExecutionException, InterruptedException {
         return userRepository.findById(uid);
+    }
+
+    public String getHospitalIdByEmail(String email) throws ExecutionException,InterruptedException{
+        return userRepository.getHospitalIdByEmail(email);
     }
 
     public User registerUser(User user) throws ExecutionException, InterruptedException {

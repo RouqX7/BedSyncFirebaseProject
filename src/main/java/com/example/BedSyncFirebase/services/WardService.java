@@ -24,12 +24,20 @@ public class WardService {
         return wardRepository.findById(id);
     }
 
-    public Ward createWard(Ward ward) throws ExecutionException, InterruptedException {
+    public Ward createWard(String hospitalId,Ward ward) throws ExecutionException, InterruptedException {
+        ward.setHospitalId(hospitalId);
+
         return wardRepository.save(ward);
     }
     public Ward updateWard(Ward ward) throws ExecutionException, InterruptedException{
         return  wardRepository.updateWard(ward);
     }
+
+    public List<Ward> getWardsByHospital(String hospitalId) throws ExecutionException, InterruptedException {
+        // Implement the logic to fetch wards by hospital ID from your repository
+        return wardRepository.findByHospitalId(hospitalId); // Assuming you have a method findByHospitalId in your repository
+    }
+
 
     public void deleteWard(String id) throws ExecutionException, InterruptedException {
         wardRepository.deleteById(id);

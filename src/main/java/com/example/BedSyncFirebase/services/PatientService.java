@@ -2,9 +2,11 @@ package com.example.BedSyncFirebase.services;
 
 
 import com.example.BedSyncFirebase.models.Bed;
+import com.example.BedSyncFirebase.models.Hospital;
 import com.example.BedSyncFirebase.models.Patient;
 import com.example.BedSyncFirebase.models.Ward;
 import com.example.BedSyncFirebase.repos.BedRepository;
+import com.example.BedSyncFirebase.repos.HospitalRepository;
 import com.example.BedSyncFirebase.repos.PatientRepository;
 import com.example.BedSyncFirebase.repos.WardRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -35,7 +38,14 @@ public class PatientService {
     @Autowired
     private WardRepository wardRepository;
 
-    public Patient registerPatient(Patient patient) throws ExecutionException, InterruptedException {
+    @Autowired
+    private HospitalRepository hospitalRepository;
+
+    @Autowired
+    private HospitalService hospitalService;
+
+    public Patient registerPatient(String hospitalId,Patient patient) throws ExecutionException, InterruptedException {
+        patient.setHospitalId(hospitalId);
         return patientRepository.save(patient);
     }
 
@@ -63,9 +73,10 @@ public class PatientService {
         return patientRepository.findByIsInNeedOfBed(true);
     }
 
-    public void assignPatientToBed(String patientId, String bedId, String wardId) throws ExecutionException, InterruptedException {
+    public void assignPatientToBed(String patientId,String hospitalId, String bedId, String wardId) throws ExecutionException, InterruptedException {
         // Get patient by ID
         Patient patient = getPatientById(patientId).orElseThrow(() -> new NoSuchElementException("Patient not found"));
+
 
         // Check if patient is already admitted
         if (patient.getAdmitted()) {
@@ -83,6 +94,9 @@ public class PatientService {
         // Get ward by ID
         Ward ward = wardService.getWardById(wardId).orElseThrow(() -> new NoSuchElementException("Ward not found"));
 
+        Hospital hospital = hospitalService.getHospitalById(hospitalId).orElseThrow(() -> new NoSuchElementException("Hospital not found"));
+
+
         // Update patient's bed assignment and admission date
         patient.setBedId(bedId);
         patient.setAdmissionDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
@@ -94,7 +108,11 @@ public class PatientService {
         bed.setPatientId(patientId);
         bed.setAvailable(false);
         bed.setAdmissionDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
-         bedRepository.updateBed(bed);
+        bedRepository.updateBed(bed);
+
+        hospital.setAvailableBeds(hospital.getAvailableBeds() - 1);
+        hospital.setCurrentOccupancy(hospital.getCurrentOccupancy() - 1);
+        hospitalRepository.updateHospital(hospital);
 
         // Update available beds count in the ward
         ward.setAvailableBeds(ward.getAvailableBeds() - 1);

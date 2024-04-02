@@ -2,6 +2,7 @@ package com.example.BedSyncFirebase.repos;
 
 import com.example.BedSyncFirebase.models.Bed;
 import com.example.BedSyncFirebase.models.Patient;
+import com.example.BedSyncFirebase.models.Ward;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,11 +37,11 @@ public class BedRepository {
     }
 
     public Optional<Bed> findById(String id) {
-        DocumentReference documentReference = firestore.collection("beds").document(id);
-        ApiFuture<DocumentSnapshot> documentSnapshot = documentReference.get();
-
+        DocumentReference docRef = firestore.collection("beds").document(id);
         try {
+            ApiFuture<DocumentSnapshot> documentSnapshot = docRef.get();
             DocumentSnapshot snapshot = documentSnapshot.get();
+
             if (snapshot.exists()) {
                 Bed bed = snapshot.toObject(Bed.class);
                 return Optional.ofNullable(bed);
@@ -48,6 +49,7 @@ public class BedRepository {
                 return Optional.empty();
             }
         } catch (InterruptedException | ExecutionException e) {
+            // Properly handle exceptions, such as logging or throwing a custom exception
             e.printStackTrace();
             return Optional.empty();
         }
@@ -56,8 +58,6 @@ public class BedRepository {
         CollectionReference beds = firestore.collection("beds");
         ApiFuture<DocumentReference> result = beds.add(bed);
 
-        // Optionally, you can set the generated ID back to the FirebaseBed object
-        // bed.setId(result.get().getId());
 
         return null; // Return the saved FirebaseBed object
     }

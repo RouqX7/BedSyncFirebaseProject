@@ -1,8 +1,10 @@
 package com.example.BedSyncFirebase.controllers;
 
 import com.example.BedSyncFirebase.models.Bed;
+import com.example.BedSyncFirebase.models.Hospital;
 import com.example.BedSyncFirebase.models.Ward;
 import com.example.BedSyncFirebase.services.BedService;
+import com.example.BedSyncFirebase.services.HospitalService;
 import com.example.BedSyncFirebase.services.WardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,9 @@ public class BedController {
   @Autowired
   private WardService wardService;
 
+  @Autowired
+  private HospitalService hospitalService;
+
     @GetMapping("/all")
     public List<Bed> getAllBeds() throws ExecutionException, InterruptedException {
         return bedService.getAllBeds();
@@ -40,33 +45,16 @@ public class BedController {
         }
     }
 
-    @DeleteMapping("/delete/{id}/{wardId} ")
-    public ResponseEntity<String> deleteBed(@PathVariable String id, @PathVariable String wardId) {
+    @DeleteMapping("/wards/{hospitalId}/{wardId}/beds/{bedId}")
+    public ResponseEntity<?> deleteBed(@PathVariable String hospitalId, @PathVariable String wardId, @PathVariable String bedId) {
         try {
-            Optional<Ward> optionalWard = wardService.getWardById(wardId);
-            if (optionalWard.isPresent()) {
-                // Ward exists, update the totalBeds field
-                Ward ward = optionalWard.get();
-                ward.setTotalBeds(ward.getTotalBeds() - 1); // Decrement totalBeds by 1
-                wardService.updateWard(ward); // Update the ward
-
-                // Check if the bed being deleted is available
-                Optional<Bed> optionalBed = Optional.ofNullable(bedService.getBedById(id));
-                if (optionalBed.isPresent() && optionalBed.get().isAvailable()) {
-                    // Decrement the availableBeds field in the associated Ward if the bed is available
-                    ward.setAvailableBeds(ward.getAvailableBeds() - 1);
-                    wardService.updateWard(ward); // Update the ward again
-                }
-            } else {
-                // Ward doesn't exist, handle the error
-                throw new RuntimeException("Ward not found with ID: " + wardId);
-            }
-            bedService.deleteBed(id,wardId);
-            return ResponseEntity.noContent().build();
+            bedService.deleteBed(bedId, hospitalId, wardId);
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("Error deleting bed: " + e.getMessage());
         }
     }
+
 
 
 
@@ -102,33 +90,18 @@ public class BedController {
         }
     }
 
-    @PostMapping("/wards/{wardId}/create-bed")
-    public ResponseEntity<?> createBedForWard(@PathVariable String wardId, @RequestBody Bed bed) {
+    @PostMapping("/wards/{hospitalId}/{wardId}/create-bed")
+    public ResponseEntity<?> createBedForWard(@PathVariable String hospitalId, @PathVariable String wardId, @RequestBody Bed bed) {
         try {
-            System.out.println("Ward ID received: " + wardId); // Add this line
 
-            bed.setWardId(wardId);  // Associate the bed with the specified wardId
-            Bed createdBed = bedService.createBed(bed);
-
-
-            // Update the totalBeds field in the associated Ward
-            Optional<Ward> optionalWard = wardService.getWardById(wardId);
-            if (optionalWard.isPresent()) {
-                // Ward exists, update the totalBeds field
-                Ward ward = optionalWard.get();
-                ward.setTotalBeds(ward.getTotalBeds() + 1); // Increment totalBeds by 1
-                ward.setAvailableBeds(ward.getAvailableBeds() + 1);
-                wardService.updateWard(ward); // Use the update method
-            } else {
-                // Ward doesn't exist, handle the error
-                throw new RuntimeException("Ward not found with ID: " + wardId);
-            }
+            Bed createdBed = bedService.createBed(hospitalId,wardId, bed);
 
             return ResponseEntity.ok(createdBed);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
 
 
 

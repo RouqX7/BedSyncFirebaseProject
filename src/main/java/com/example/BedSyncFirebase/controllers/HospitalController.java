@@ -37,7 +37,7 @@ public class HospitalController {
         }
     }
 
-    @PostMapping
+    @PostMapping("create-hospital")
     public ResponseEntity<Hospital> createHospital(@RequestBody Hospital hospital) {
         try {
             Hospital createdHospital = hospitalService.createHospital(hospital);

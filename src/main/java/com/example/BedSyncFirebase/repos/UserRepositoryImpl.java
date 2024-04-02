@@ -1,6 +1,8 @@
 package com.example.BedSyncFirebase.repos;
 
+import com.example.BedSyncFirebase.models.Patient;
 import com.example.BedSyncFirebase.models.User;
+import com.example.BedSyncFirebase.models.Ward;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,19 +34,57 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public Optional<User> findById(String id) throws ExecutionException, InterruptedException {
+    public Optional<User> findById(String id) {
         DocumentReference docRef = firestore.collection("users").document(id);
-        ApiFuture<DocumentSnapshot> future = docRef.get();
-        DocumentSnapshot document = future.get();
+        try {
+            ApiFuture<DocumentSnapshot> documentSnapshot = docRef.get();
+            DocumentSnapshot snapshot = documentSnapshot.get();
 
-        if (document.exists()) {
-            User user = document.toObject(User.class);
-            assert user != null;
+            if (snapshot.exists()) {
+                User user = snapshot.toObject(User.class);
+                return Optional.ofNullable(user);
+            } else {
+                return Optional.empty();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            // Properly handle exceptions, such as logging or throwing a custom exception
+            e.printStackTrace();
+            return Optional.empty();
+        }
+    }
+
+
+    @Override
+    public Optional<User> findByEmail(String email) throws ExecutionException, InterruptedException {
+        CollectionReference users = firestore.collection("users");
+        Query query = users.whereEqualTo("email", email).limit(1); // Limiting query to retrieve only one document
+        QuerySnapshot querySnapshot = query.get().get();
+
+        if (!querySnapshot.isEmpty()) {
+            QueryDocumentSnapshot documentSnapshot = querySnapshot.getDocuments().get(0);
+            User user = documentSnapshot.toObject(User.class);
             return Optional.of(user);
         } else {
             return Optional.empty();
         }
     }
+
+    @Override
+    public String getHospitalIdByEmail(String email) throws ExecutionException, InterruptedException {
+        CollectionReference users = firestore.collection("users");
+        Query query = users.whereEqualTo("email", email).limit(1); // Limiting query to retrieve only one document
+        QuerySnapshot querySnapshot = query.get().get();
+
+        if (!querySnapshot.isEmpty()) {
+            DocumentSnapshot documentSnapshot = querySnapshot.getDocuments().get(0);
+            User user = documentSnapshot.toObject(User.class);
+            return user.getHospitalId(); // Assuming there's a getter method for hospitalId in your User class
+        } else {
+            return null;
+        }
+    }
+
+
 
 
     @Override

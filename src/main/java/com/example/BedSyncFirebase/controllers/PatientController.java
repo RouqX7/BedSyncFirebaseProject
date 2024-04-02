@@ -21,9 +21,9 @@ public class PatientController {
     private PatientService patientService;
 
     @PostMapping("/create-patient")
-    public ResponseEntity<Patient> registerNewPatient(@RequestBody Patient patient) {
+    public ResponseEntity<Patient> registerNewPatient(@PathVariable String hospitalId,@RequestBody Patient patient) {
         try {
-            Patient registeredPatient = patientService.registerPatient(patient);
+            Patient registeredPatient = patientService.registerPatient(hospitalId,patient);
             return ResponseEntity.status(HttpStatus.CREATED).body(registeredPatient);
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.badRequest().body(null);
@@ -75,10 +75,10 @@ public class PatientController {
         return patientService.findByIsInNeedOfBed();
     }
 
-    @PostMapping("/{patientId}/{bedId}/{wardId}/assign-bed")
-    public ResponseEntity<?> assignPatientToBed(@PathVariable String patientId, @PathVariable String bedId,@PathVariable String wardId)  {
+    @PostMapping("/{patientId}/{bedId}/{wardId}/{hospitalId}/assign-bed")
+    public ResponseEntity<?> assignPatientToBed(@PathVariable String patientId, @PathVariable String bedId,@PathVariable String wardId, @PathVariable String hospitalId)  {
         try {
-            patientService.assignPatientToBed (patientId, bedId,wardId);
+            patientService.assignPatientToBed (patientId, bedId,wardId,hospitalId);
             return ResponseEntity.ok().build();
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
