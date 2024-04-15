@@ -28,9 +28,7 @@ public class User {
     private String profilePictureUrl;
     private String available;
 
-    public User(){
 
-    }
 
 
 }

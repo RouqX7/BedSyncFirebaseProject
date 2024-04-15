@@ -2,16 +2,17 @@ package com.example.BedSyncFirebase.models;
 
 
 import com.google.cloud.firestore.annotation.DocumentId;
+import lombok.Builder;
 import lombok.Data;
 
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Date;
-
+@Builder
 @Data
 public class Patient {
-    @DocumentId
+
     private String id;
 
     private String firstName;
@@ -29,9 +30,7 @@ public class Patient {
     private String issue;
     private Duration stayDuration;
 
-    public Patient() {
-        // Default constructor is needed for Firestore deserialization
-    }
+
 
     public void calculateStayDuration() {
         if (admissionDate != null && dischargeDate != null) {

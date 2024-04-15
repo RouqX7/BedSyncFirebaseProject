@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 @Repository
@@ -17,6 +18,8 @@ public class WardRepository {
 
     @Autowired
     private Firestore firestore;
+
+
 
     public List<Ward> findAll() throws ExecutionException, InterruptedException {
         CollectionReference wards = firestore.collection("wards");
@@ -52,8 +55,11 @@ public class WardRepository {
 
 
     public Ward save(Ward ward) throws ExecutionException, InterruptedException {
-        CollectionReference wards = firestore.collection("wards");
-        ApiFuture<DocumentReference> result = wards.add(ward);
+        String newId =  UUID.randomUUID().toString();
+        ward.setId(newId);
+        ApiFuture<WriteResult> future = firestore.collection("wards")
+                .document(newId)
+                .set(ward);
         return ward;
     }
 

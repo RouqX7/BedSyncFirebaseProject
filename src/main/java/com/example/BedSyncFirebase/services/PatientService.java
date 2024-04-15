@@ -61,7 +61,7 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
-    public void update(Patient patient) throws ExecutionException,InterruptedException{
+    public void updatePatient(Patient patient) throws ExecutionException,InterruptedException{
         patientRepository.updatePatient(patient);
     }
 
@@ -85,29 +85,24 @@ public class PatientService {
 
         // Get bed by ID
         Bed bed = bedService.getBedById(bedId);
-
         // Check if bed is dirty
         if (!bed.isClean()) {
             throw new IllegalStateException("Bed is dirty and cannot be assigned to a patient.");
         }
-
         // Get ward by ID
         Ward ward = wardService.getWardById(wardId).orElseThrow(() -> new NoSuchElementException("Ward not found"));
-
         Hospital hospital = hospitalService.getHospitalById(hospitalId).orElseThrow(() -> new NoSuchElementException("Hospital not found"));
-
-
         // Update patient's bed assignment and admission date
         patient.setBedId(bedId);
         patient.setAdmissionDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
         patient.setAdmitted(true);
         patient.setInNeedOfBed(false);
-        update(patient);
+        updatePatient(patient);
 
         // Update bed state and availability
         bed.setPatientId(patientId);
         bed.setAvailable(false);
-        bed.setAdmissionDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
+        bed.setInUse(true);
         bedRepository.updateBed(bed);
 
         hospital.setAvailableBeds(hospital.getAvailableBeds() - 1);
@@ -143,13 +138,13 @@ public class PatientService {
         patient.setDischargeDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
         patient.setAdmitted(false);
         patient.setInNeedOfBed(true);
-        update(patient);
+        updatePatient(patient);
 
         // Update bed state and availability
         bed.setClean(false);
         bed.setAvailable(true);
-        bed.setDischargeDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
         bed.setPatientId(null);
+        bed.setInUse(false);
         bedRepository.updateBed(bed);
 
         // Update the ward

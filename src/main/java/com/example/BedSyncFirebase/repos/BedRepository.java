@@ -10,10 +10,7 @@ import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -55,11 +52,12 @@ public class BedRepository {
         }
     }
     public Bed save(Bed bed) throws ExecutionException, InterruptedException {
-        CollectionReference beds = firestore.collection("beds");
-        ApiFuture<DocumentReference> result = beds.add(bed);
-
-
-        return null; // Return the saved FirebaseBed object
+        String newId =  UUID.randomUUID().toString();
+        bed.setId(newId);
+        ApiFuture<WriteResult> future = firestore.collection("beds")
+                .document(newId)
+                .set(bed);
+        return bed;
     }
 
     public Bed updateBed(Bed bed) throws ExecutionException, InterruptedException {
@@ -74,6 +72,18 @@ public class BedRepository {
     public List<Bed> findByWardId(String wardId) throws ExecutionException, InterruptedException {
         CollectionReference beds = firestore.collection("beds");
         ApiFuture<QuerySnapshot> querySnapshot = beds.whereEqualTo("wardId", wardId).get();
+
+        List<Bed> bedList = new ArrayList<>();
+        for (QueryDocumentSnapshot document : querySnapshot.get().getDocuments()) {
+            Bed bed = document.toObject(Bed.class);
+            bedList.add(bed);
+        }
+        return bedList;
+    }
+
+    public List<Bed> findByHospitalId(String hospitalId) throws ExecutionException, InterruptedException {
+        CollectionReference beds = firestore.collection("beds");
+        ApiFuture<QuerySnapshot> querySnapshot = beds.whereEqualTo("hospitalId", hospitalId).get();
 
         List<Bed> bedList = new ArrayList<>();
         for (QueryDocumentSnapshot document : querySnapshot.get().getDocuments()) {
@@ -130,6 +140,18 @@ public class BedRepository {
             bedList.add(bed);
         }
 
+        return bedList;
+    }
+
+    public List<Bed> findByTransferRequestedTrue() throws ExecutionException, InterruptedException {
+        CollectionReference beds = firestore.collection("beds");
+        ApiFuture<QuerySnapshot> querySnapshot = beds.whereEqualTo("transferRequested", true).get();
+
+        List<Bed> bedList = new ArrayList<>();
+        for (QueryDocumentSnapshot document : querySnapshot.get().getDocuments()) {
+            Bed bed = document.toObject(Bed.class);
+            bedList.add(bed);
+        }
         return bedList;
     }
 }

@@ -3,6 +3,8 @@ package com.example.BedSyncFirebase.configs;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.FirestoreOptions;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,6 +14,9 @@ import java.util.Objects;
 @Configuration
 public class FireStoreConfigs {
 
+    private Firestore db;
+
+
     @Bean
     public Firestore firestore() throws IOException {
         // Load your Google Cloud Platform credentials file (serviceAccountKey.json)
@@ -19,7 +24,7 @@ public class FireStoreConfigs {
                 Objects.requireNonNull(getClass().getResourceAsStream("/serviceAccountKey.json")));
 
         // Build FirestoreOptions with the credentials
-        FirestoreOptions options = FirestoreOptions.newBuilder()
+        FirestoreOptions options =  FirestoreOptions.newBuilder()
                 .setCredentials(credentials)
                 .build();
 

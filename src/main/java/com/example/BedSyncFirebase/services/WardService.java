@@ -24,8 +24,7 @@ public class WardService {
         return wardRepository.findById(id);
     }
 
-    public Ward createWard(String hospitalId,Ward ward) throws ExecutionException, InterruptedException {
-        ward.setHospitalId(hospitalId);
+    public Ward createWard(Ward ward) throws ExecutionException, InterruptedException {
 
         return wardRepository.save(ward);
     }

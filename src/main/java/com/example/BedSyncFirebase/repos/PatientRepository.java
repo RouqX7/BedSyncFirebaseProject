@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 @Repository
@@ -66,8 +67,11 @@ public class PatientRepository {
 
 
     public Patient save(Patient patient) throws ExecutionException, InterruptedException {
-        CollectionReference patients = firestore.collection("patients");
-        ApiFuture<DocumentReference> result = patients.add(patient);
+        String newId =  UUID.randomUUID().toString();
+        patient.setId(newId);
+        ApiFuture<WriteResult> future = firestore.collection("patients")
+                .document(newId)
+                .set(patient);
         return patient;
     }
 

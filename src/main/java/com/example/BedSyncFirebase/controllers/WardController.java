@@ -65,9 +65,9 @@ public class WardController {
 
 
     @PostMapping("/create-ward/{hospitalId}")
-    public ResponseEntity<?> createWard(@PathVariable String hospitalId, @RequestBody Ward ward) {
+    public ResponseEntity<?> createWard(@RequestBody Ward ward  ) {
         try {
-            return ResponseEntity.ok(wardService.createWard(hospitalId, ward));
+            return ResponseEntity.ok(wardService.createWard(ward));
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.badRequest().body("Error creating ward: " + e.getMessage());
         }

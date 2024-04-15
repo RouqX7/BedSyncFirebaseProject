@@ -16,7 +16,7 @@ public class HospitalController {
     @Autowired
     private HospitalService hospitalService;
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<Hospital>> getAllHospitals() {
         try {
             List<Hospital> hospitals = hospitalService.getAllHospitals();
@@ -36,6 +36,8 @@ public class HospitalController {
             return ResponseEntity.status(500).build();
         }
     }
+
+
 
     @PostMapping("create-hospital")
     public ResponseEntity<Hospital> createHospital(@RequestBody Hospital hospital) {

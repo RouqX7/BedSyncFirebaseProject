@@ -1,5 +1,6 @@
 package com.example.BedSyncFirebase.controllers;
 
+import com.example.BedSyncFirebase.DTO.PendingBedTransferRequest;
 import com.example.BedSyncFirebase.models.Bed;
 import com.example.BedSyncFirebase.models.Hospital;
 import com.example.BedSyncFirebase.models.Ward;
@@ -55,9 +56,25 @@ public class BedController {
         }
     }
 
+    @PutMapping("/{bedId}")
+    public ResponseEntity<?> updateBed(@PathVariable String bedId, @RequestBody Bed bed ) {
+        try {
+            Bed existingBed = bedService.getBedById(bedId);
 
-
-
+            if (existingBed != null) {
+                bed.setId(existingBed.getId()); // Set ID from existing bed
+                try {
+                    return ResponseEntity.ok(bedService.updateBed(bed));
+                } catch (ExecutionException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.badRequest().body("Error updating ward: " + e.getMessage());
+        }
+    }
     @GetMapping("/available")
     public List<Bed> getAllAvailableBeds() throws ExecutionException, InterruptedException {
         return bedService.getAllAvailableBeds();
@@ -102,22 +119,15 @@ public class BedController {
         }
     }
 
-
-
-
-
-//    @GetMapping("/beds/{bedId}/occupancy")
-//    public ResponseEntity<?> getOccupancyTimeForBed(@PathVariable String bedId) {
-//        try {
-//            Duration occupancyTime = bedService.getOccupancyTimeForBed(bedId);
-//            return ResponseEntity.ok("Occupancy Time: " + occupancyTime.toHours() + " hours");
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body("Error calculating occupancy time: " + e.getMessage());
-//        }
-//    }
-
-
+    @GetMapping("/getBedsByHospitalId/{hospitalId}")
+    public ResponseEntity<List<Bed>> getBedsByHospitalId(@PathVariable String hospitalId) {
+        try {
+            List<Bed> beds = bedService.getBedsByHospitalId(hospitalId);
+            return ResponseEntity.ok(beds);
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
     @GetMapping("/beds/timestamp")
     public ResponseEntity<?> getBedsByTimestampRange(@RequestParam LocalDateTime startTimestamp,
                                                      @RequestParam LocalDateTime endTimestamp) {
@@ -140,6 +150,54 @@ public class BedController {
         bedService.markAsDirty(bedId);
 
         return ResponseEntity.ok().build();
+    }
+
+
+    // Endpoint for requesting bed transfer
+    @PostMapping("/{bedId}/requestBedTransfer")
+    public ResponseEntity<String> requestBedTransfer(@PathVariable String bedId,
+                                                     @RequestParam String requestingHospitalId,
+                                                     @RequestParam String transferReason,
+                                                     @RequestParam String patientId) {
+        try {
+            bedService.requestBedTransfer(bedId, patientId, requestingHospitalId, transferReason);
+            return ResponseEntity.ok("Bed transfer requested successfully.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Bed not found with ID: " + bedId);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body("Bed is currently in use and cannot be transferred.");
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error requesting bed transfer: " + e.getMessage());
+        }
+    }
+
+
+    // Endpoint for responding to bed transfer request
+    @PostMapping("/{bedId}/transfer/response")
+    public ResponseEntity<String> respondToBedTransferRequest(@PathVariable String bedId, @RequestParam boolean isAccepted, @RequestParam String responseReason) throws ExecutionException, InterruptedException {
+        bedService.respondToBedTransferRequest(bedId, isAccepted, responseReason);
+        return ResponseEntity.ok("Bed transfer response recorded successfully.");
+    }
+
+    // Endpoint for performing bed transfer
+    @PostMapping("/{bedId}/transfer/perform")
+    public ResponseEntity<String> performBedTransfer(@PathVariable String bedId, @RequestParam String receivingHospitalId) throws ExecutionException, InterruptedException {
+        bedService.performBedTransfer(bedId, receivingHospitalId);
+        return ResponseEntity.ok("Bed transfer performed successfully.");
+    }
+
+    @GetMapping("/pending-transfer-requests")
+    public ResponseEntity<List<PendingBedTransferRequest>> getPendingBedTransferRequests() {
+        try {
+            List<PendingBedTransferRequest> pendingRequests = bedService.getPendingBedTransferRequests();
+            return ResponseEntity.ok(pendingRequests);
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null); 
+        }
     }
 
 

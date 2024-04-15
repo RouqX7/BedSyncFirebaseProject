@@ -1,5 +1,6 @@
 package com.example.BedSyncFirebase.services;
 
+import com.example.BedSyncFirebase.DTO.PendingBedTransferRequest;
 import com.example.BedSyncFirebase.models.Bed;
 import com.example.BedSyncFirebase.models.Hospital;
 import com.example.BedSyncFirebase.models.Ward;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -44,7 +46,7 @@ public class BedService {
         return bedRepository.findAll();
     }
 
-    public Bed Bed(Bed bed) throws ExecutionException, InterruptedException{
+    public Bed updateBed(Bed bed) throws ExecutionException, InterruptedException{
         return bedRepository.updateBed(bed);
     }
 
@@ -69,6 +71,7 @@ public class BedService {
             Ward ward = optionalWard.get();
             ward.setTotalBeds(ward.getTotalBeds() + 1); // Increment totalBeds by 1
             ward.setAvailableBeds(ward.getAvailableBeds() + 1);
+            ward.setCurrentOccupancy(ward.getCurrentOccupancy() + 1);
             wardService.updateWard(ward); // Use the update method
         } else {
             // Ward doesn't exist, handle the error
@@ -80,6 +83,7 @@ public class BedService {
             Hospital hospital = optionalHospital.get();
             hospital.setTotalBeds(hospital.getTotalBeds() + 1);
             hospital.setAvailableBeds(hospital.getAvailableBeds() + 1);
+            hospital.setCurrentOccupancy(hospital.getCurrentOccupancy()+ 1);
             hospitalService.updateHospital(hospital);
 
         }
@@ -88,104 +92,51 @@ public class BedService {
         return bedRepository.save(bed);
     }
     public void deleteBed(String id, String hospitalId, String wardId) throws ExecutionException, InterruptedException {
-        // Retrieve the bed to get the associated wardId and availability
-        Optional<Bed> optionalBed = bedRepository.findById(id);
-        if (optionalBed.isPresent()) {
-            Bed bed = optionalBed.get();
+        // Retrieve the bed
+        Bed bed = bedRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Bed not found with ID: " + id));
 
-            // Check if the wardId matches the associated wardId of the bed
-            if (!bed.getWardId().equals(wardId)) {
-                throw new IllegalArgumentException("Mismatched wardId");
-            }
-
-            boolean isAvailable = bed.isAvailable();
-
-            // Delete the bed from the database
-            bedRepository.deleteById(id);
-
-            // Update the totalBeds field in the associated Ward
-            decrementTotalBeds( wardId);
-
-            // Update the availableBeds field in the associated Ward if the bed was available
-            if (isAvailable) {
-                decrementAvailableBeds( wardId);
-            }
-
-            // Update the totalBeds field in the associated Hospital
-            decrementTotalBedsInHospital(hospitalId);
-
-            // Update the availableBeds field in the associated Hospital if the bed was available
-            if (isAvailable) {
-                decrementAvailableBedsInHospital(hospitalId);
-            }
-        } else {
-            throw new RuntimeException("Bed not found with ID: " + id);
+        // Ensure the bed is associated with the correct ward
+        if (!bed.getWardId().equals(wardId)) {
+            throw new IllegalArgumentException("Mismatched wardId");
         }
-    }
 
-
-
-
-    private void decrementTotalBeds(String wardId) throws ExecutionException, InterruptedException {
-        Optional<Ward> optionalWard = wardRepository.findById(wardId);
-        if (optionalWard.isPresent()) {
-            Ward ward = optionalWard.get();
-            int totalBeds = ward.getTotalBeds();
-            if (totalBeds > 0) {
-                ward.setTotalBeds(totalBeds - 1); // Decrement totalBeds by 1
-                wardRepository.updateWard(ward); // Save the updated ward in the database
-            }
-        } else {
-            throw new RuntimeException("Ward not found with ID: " + wardId);
+        // Check if the bed is available
+        if (!bed.isAvailable()) {
+            throw new IllegalStateException("Bed is currently in use and cannot be deleted.");
         }
-    }
 
-    private void decrementAvailableBeds(String wardId) throws ExecutionException, InterruptedException {
-        Optional<Ward> optionalWard = wardRepository.findById(wardId);
-        if (optionalWard.isPresent()) {
-            Ward ward = optionalWard.get();
-            int availableBeds = ward.getAvailableBeds();
-            if (availableBeds > 0) {
-                ward.setAvailableBeds(availableBeds - 1); // Decrement availableBeds by 1
-                wardRepository.updateWard(ward); // Save the updated ward in the database
-            }
-        } else {
-            throw new RuntimeException("Ward not found with ID: " + wardId);
-        }
-    }
+        // Retrieve the associated ward and hospital
+        Ward ward = wardService.getWardById(wardId)
+                .orElseThrow(() -> new RuntimeException("Ward not found with ID: " + wardId));
 
-    private void decrementTotalBedsInHospital(String hospitalId) throws ExecutionException, InterruptedException {
-        Optional<Hospital> optionalHospital = hospitalRepository.findById(hospitalId);
-        if (optionalHospital.isPresent()) {
-            Hospital hospital = optionalHospital.get();
-            int totalBeds = hospital.getTotalBeds();
-            if (totalBeds > 0) {
-                hospital.setTotalBeds(totalBeds - 1); // Decrement totalBeds by 1
-                hospitalRepository.updateHospital(hospital); // Save the updated hospital in the database
-            }
-        } else {
-            throw new RuntimeException("Hospital not found with ID: " + hospitalId);
-        }
-    }
+        Hospital hospital = hospitalService.getHospitalById(hospitalId)
+                .orElseThrow(() -> new RuntimeException("Hospital not found with ID: " + hospitalId));
 
-    private void decrementAvailableBedsInHospital(String hospitalId) throws ExecutionException, InterruptedException {
-        Optional<Hospital> optionalHospital = hospitalRepository.findById(hospitalId);
-        if (optionalHospital.isPresent()) {
-            Hospital hospital = optionalHospital.get();
-            int availableBeds = hospital.getAvailableBeds();
-            if (availableBeds > 0) {
-                hospital.setAvailableBeds(availableBeds - 1); // Decrement availableBeds by 1
-                hospitalRepository.updateHospital(hospital); // Save the updated hospital in the database
-            }
-        } else {
-            throw new RuntimeException("Hospital not found with ID: " + hospitalId);
-        }
+        // Update counts
+        ward.setTotalBeds(ward.getTotalBeds() - 1);
+        ward.setAvailableBeds(ward.getAvailableBeds() - 1);
+        ward.setCurrentOccupancy(ward.getCurrentOccupancy() - 1);
+        wardService.updateWard(ward);
+
+        hospital.setTotalBeds(hospital.getTotalBeds() - 1);
+        hospital.setAvailableBeds(hospital.getAvailableBeds() - 1);
+        hospital.setCurrentOccupancy(hospital.getCurrentOccupancy() - 1);
+        hospitalService.updateHospital(hospital);
+
+        // Delete the bed from the database
+        bedRepository.deleteById(id);
     }
 
 
     public List<Bed> getBedsByWard(String wardId) throws ExecutionException, InterruptedException {
         return bedRepository.findByWardId(wardId);
     }
+
+    public List<Bed> getBedsByHospitalId(String hospitalId) throws ExecutionException, InterruptedException {
+        return bedRepository.findByHospitalId(hospitalId);
+    }
+
     public List<Bed> getAllAvailableBeds() throws ExecutionException, InterruptedException {
         return bedRepository.findByIsAvailable(true);
     }
@@ -229,5 +180,82 @@ public class BedService {
     public List<Bed> getBedsByTimestampRange(LocalDateTime startTimestamp, LocalDateTime endTimestamp) throws ExecutionException, InterruptedException {
         return bedRepository.findByTimestampBetween(startTimestamp, endTimestamp);
     }
+
+    //Bed Transfer methods
+
+    public void requestBedTransfer(String bedId, String patientId, String requestingHospitalId, String transferReason) throws ExecutionException, InterruptedException {
+        Bed bed = getBedById(bedId);
+        if (bed == null) {
+            throw new IllegalArgumentException("Bed not found with ID: " + bedId);
+        }
+        if (!bed.isAvailable()) {
+            throw new IllegalStateException("Bed is currently in use and cannot be transferred.");
+        }
+
+        bed.setTransferRequested(true);
+        bed.setRequestingHospitalId(requestingHospitalId);
+        bed.setTransferReason(transferReason);
+        bed.setPatientId(patientId); // Associate the patient with the bed transfer
+        bedRepository.updateBed(bed);
+    }
+
+
+    public void respondToBedTransferRequest(String bedId, boolean isAccepted, String responseReason) throws ExecutionException, InterruptedException {
+        Bed bed = getBedById(bedId);
+        if (bed == null) {
+            throw new IllegalArgumentException("Bed not found with ID: " + bedId);
+        }
+        if (!bed.isTransferRequested()) {
+            throw new IllegalStateException("No transfer request exists for this bed.");
+        }
+
+        bed.setTransferRequested(false);
+        bed.setTransferStatus(isAccepted ? Bed.TransferStatus.ACCEPTED : Bed.TransferStatus.DECLINED);
+        bed.setTransferResponseReason(responseReason);
+        bedRepository.updateBed(bed);
+    }
+
+    public void performBedTransfer(String bedId, String receivingHospitalId) throws ExecutionException, InterruptedException {
+        Bed bed = getBedById(bedId);
+        if (bed == null) {
+            throw new IllegalArgumentException("Bed not found with ID: " + bedId);
+        }
+        if (!bed.isTransferRequested() || bed.getTransferStatus() != Bed.TransferStatus.ACCEPTED) {
+            throw new IllegalStateException("Transfer request must be accepted before performing the transfer.");
+        }
+
+        // Update the hospital ID to the receiving hospital
+        bed.setHospitalId(receivingHospitalId);
+        bed.setWardId(null); // Reset the ward ID
+
+        // Clear transfer-related fields
+        bed.setTransferRequested(false);
+        bed.setTransferReason(null);
+        bed.setTransferStatus(null);
+        bed.setTransferResponseReason(null);
+
+        // Update the bed
+        bedRepository.updateBed(bed);
+    }
+
+    public List<PendingBedTransferRequest> getPendingBedTransferRequests() throws ExecutionException, InterruptedException {
+        List<PendingBedTransferRequest> pendingRequests = new ArrayList<>();
+
+
+        List<Bed> beds = bedRepository.findByTransferRequestedTrue();
+
+        for (Bed bed : beds) {
+            PendingBedTransferRequest request = new PendingBedTransferRequest();
+            request.setBedId(bed.getId());
+            request.setRequestingHospitalId(bed.getRequestingHospitalId());
+            request.setPatientId(bed.getPatientId());
+            request.setTransferReason(bed.getTransferReason());
+            pendingRequests.add(request);
+        }
+
+        return pendingRequests;
+    }
+
+
 
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -51,14 +52,30 @@ public class PatientController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Patient> updatePatient(@PathVariable String id, @RequestBody Patient updatedPatient) {
+    @PutMapping("/{patientId}")
+    public ResponseEntity<?> updatePatient(@PathVariable String patientId, @RequestBody Patient patient) {
         try {
-            return ResponseEntity.ok(patientService.save(updatedPatient));
+            Optional<Patient> existingPatientOptional = patientService.getPatientById(patientId);
+
+            if (existingPatientOptional.isPresent()) {
+                Patient existingPatient = existingPatientOptional.get();
+                patient.setId(patientId);
+                try {
+                    patientService.updatePatient(patient);
+                    return ResponseEntity.ok().build(); // Updated successfully, return 200 OK
+                } catch (ExecutionException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                return ResponseEntity.notFound().build(); // Patient not found, return 404 Not Found
+            }
         } catch (ExecutionException | InterruptedException e) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body("Error updating patient: " + e.getMessage()); // Error updating patient, return 400 Bad Request
         }
     }
+
+
+
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deletePatient(@PathVariable String id) {

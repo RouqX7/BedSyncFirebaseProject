@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 @Repository
@@ -89,11 +90,11 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public User save(User user) throws ExecutionException, InterruptedException {
-        CollectionReference users = firestore.collection("users");
-        ApiFuture<DocumentReference> result = users.add(user);
-
-        // Optionally, you can set the generated ID back to the User object
-        // user.setId(result.get().getId());
+        String newId =  UUID.randomUUID().toString();
+        user.setUserId(newId);
+        ApiFuture<WriteResult> future = firestore.collection("users")
+                .document(newId)
+                .set(user);
 
         return user;
     }
