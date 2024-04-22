@@ -9,17 +9,15 @@ import lombok.Data;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Date;
-@Builder
 @Data
 public class Patient {
 
     private String id;
-
     private String firstName;
     private String lastName;
     private Date dateOfBirth;
-    private ZonedDateTime admissionDate;
-    private ZonedDateTime dischargeDate;
+//    private ZonedDateTime admissionDate;
+//    private ZonedDateTime dischargeDate;
     private String contactInformation;
     private String medicalHistory;
     private String bedId;
@@ -28,20 +26,26 @@ public class Patient {
     private boolean inNeedOfBed =true;
     private String priority;
     private String issue;
-    private Duration stayDuration;
+//    private Duration stayDuration;
 
+//    store all commented fields in milliseconds
 
+    public  Patient(){
 
-    public void calculateStayDuration() {
-        if (admissionDate != null && dischargeDate != null) {
-            stayDuration = Duration.between(admissionDate, dischargeDate);
-        } else if (admissionDate != null) {
-            stayDuration = Duration.between(admissionDate, ZonedDateTime.now());
-        } else {
-            stayDuration = null; // Handle case where admission date is missing
-        }
     }
 
+
+
+//    public void calculateStayDuration() {
+//        if (admissionDate != null && dischargeDate != null) {
+//            stayDuration = Duration.between(admissionDate, dischargeDate);
+//        } else if (admissionDate != null) {
+//            stayDuration = Duration.between(admissionDate, ZonedDateTime.now());
+//        } else {
+//            stayDuration = null; // Handle case where admission date is missing
+//        }
+//    }
+//
 
 
 }

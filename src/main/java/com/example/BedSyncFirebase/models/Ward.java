@@ -7,12 +7,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Builder
 @Data
 public class Ward {
 
     private String id;
-
     protected String name;
     protected String hospitalId;
     protected String location;
@@ -22,5 +20,8 @@ public class Ward {
     protected String responsibleDepartment;
     protected int totalBeds;
     protected int availableBeds;
+
+    public Ward(){}
+
 
 }

@@ -93,17 +93,32 @@ public class BedRepository {
         return bedList;
     }
 
-     public List<Bed> findByIsAvailable(boolean available) throws ExecutionException, InterruptedException {
-                CollectionReference beds = firestore.collection("beds");
-                QuerySnapshot querySnapshot = beds.whereEqualTo("available", available).get().get();
+    public List<Bed> findByIsAvailableAndHospitalId(boolean available, String hospitalId) throws ExecutionException, InterruptedException {
+        CollectionReference beds = firestore.collection("beds");
+        Query query = beds.whereEqualTo("available", available).whereEqualTo("hospitalId", hospitalId);
+        QuerySnapshot querySnapshot = query.get().get();
 
-                List<Bed> bedList = new ArrayList<>();
-                for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
-                    Bed bed =document.toObject(Bed.class);
+        List<Bed> bedList = new ArrayList<>();
+        for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
+            Bed bed = document.toObject(Bed.class);
             bedList.add(bed);
         }
         return bedList;
     }
+
+    public List<Bed> findByIsAvailable(boolean available) throws ExecutionException, InterruptedException {
+        CollectionReference beds = firestore.collection("beds");
+        QuerySnapshot querySnapshot = beds.whereEqualTo("available", available).get().get();
+
+        List<Bed> bedList = new ArrayList<>();
+        for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
+            Bed bed = document.toObject(Bed.class);
+            bedList.add(bed);
+        }
+        return bedList;
+    }
+
+
 
     public List<Bed> findIfClean(boolean clean) throws ExecutionException, InterruptedException {
         CollectionReference beds = firestore.collection("beds");
@@ -116,6 +131,7 @@ public class BedRepository {
         }
         return bedList;
     }
+
     public List<Bed> findAvailableBedsByWardId(String wardId) throws ExecutionException, InterruptedException {
         CollectionReference beds = firestore.collection("beds");
         ApiFuture<QuerySnapshot> querySnapshot = beds.whereEqualTo("wardId", wardId)
@@ -129,6 +145,8 @@ public class BedRepository {
         }
         return bedList;
     }
+
+
     public List<Bed> findByTimestampBetween(LocalDateTime startTimestamp, LocalDateTime endTimestamp) throws ExecutionException, InterruptedException {
         CollectionReference beds = firestore.collection("beds");
         ApiFuture<QuerySnapshot> querySnapshot = beds.whereGreaterThanOrEqualTo("timestamp", startTimestamp)
@@ -142,6 +160,7 @@ public class BedRepository {
 
         return bedList;
     }
+
 
     public List<Bed> findByTransferRequestedTrue() throws ExecutionException, InterruptedException {
         CollectionReference beds = firestore.collection("beds");

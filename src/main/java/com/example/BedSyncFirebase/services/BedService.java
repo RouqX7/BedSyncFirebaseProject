@@ -3,17 +3,18 @@ package com.example.BedSyncFirebase.services;
 import com.example.BedSyncFirebase.DTO.PendingBedTransferRequest;
 import com.example.BedSyncFirebase.models.Bed;
 import com.example.BedSyncFirebase.models.Hospital;
+import com.example.BedSyncFirebase.models.Patient;
 import com.example.BedSyncFirebase.models.Ward;
 import com.example.BedSyncFirebase.repos.BedRepository;
 import com.example.BedSyncFirebase.repos.HospitalRepository;
+import com.example.BedSyncFirebase.repos.PatientRepository;
 import com.example.BedSyncFirebase.repos.WardRepository;
-import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.Firestore;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,12 @@ public class BedService {
 
     @Autowired
     private  BedRepository bedRepository;
+
+    @Autowired
+    private PatientRepository patientRepository;
+
+    @Lazy
+    private PatientService patientService;
 
     @Autowired
     private WardRepository wardRepository;
@@ -55,42 +62,44 @@ public class BedService {
                 .orElse(null);
     }
 
-    public Bed createBed(String hospitalId,String wardId, Bed bed) throws ExecutionException, InterruptedException {
+    public Bed createBed(String hospitalId, String wardId, Bed bed) throws ExecutionException, InterruptedException {
         bed.setWardId(wardId);  // Associate the bed with the specified wardId
         bed.setHospitalId(hospitalId);
-        Optional<Ward> optionalWard =  Optional.empty();
-        // Update the totalBeds field in the associated Ward
-        try{
-            optionalWard = wardService.getWardById(wardId);
-        }catch (Exception e){
-            System.out.println(e);
 
+        try {
+            Optional<Ward> optionalWard = wardService.getWardById(wardId);
+            if (optionalWard.isPresent()) {
+                Ward foundWard = optionalWard.get();  // Renamed to avoid shadowing
+                foundWard.setTotalBeds(foundWard.getTotalBeds() + 1);
+                foundWard.setAvailableBeds(foundWard.getAvailableBeds() + 1);
+                wardService.updateWard(foundWard);
+            } else {
+                throw new RuntimeException("Ward not found with ID: " + wardId);
+            }
+
+            Optional<Hospital> optionalHospital = hospitalService.getHospitalById(hospitalId);
+            if (optionalHospital.isPresent()) {
+                Hospital foundHospital = optionalHospital.get();  // Renamed to avoid shadowing
+                foundHospital.setTotalBeds(foundHospital.getTotalBeds() + 1);
+                foundHospital.setAvailableBeds(foundHospital.getAvailableBeds() + 1);
+                hospitalService.updateHospital(foundHospital);
+            }
+
+            return bedRepository.save(bed);
+        }catch (Exception e) {
+            System.out.println("Original exception: " + e.getClass().getName() + ": " + e.getMessage());
+            if (e instanceof InvocationTargetException && e.getCause() != null) {
+                System.out.println("Wrapped exception: " + e.getCause().getClass().getName() + ": " + e.getCause().getMessage());
+            }
+            throw e; // Rethrow the exception to be handled by the caller
         }
-        if (optionalWard.isPresent()) {
-            // Ward exists, update the totalBeds field
-            Ward ward = optionalWard.get();
-            ward.setTotalBeds(ward.getTotalBeds() + 1); // Increment totalBeds by 1
-            ward.setAvailableBeds(ward.getAvailableBeds() + 1);
-            ward.setCurrentOccupancy(ward.getCurrentOccupancy() + 1);
-            wardService.updateWard(ward); // Use the update method
-        } else {
-            // Ward doesn't exist, handle the error
-            throw new RuntimeException("Ward not found with ID: " + wardId);
-        }
-        Optional<Hospital> optionalHospital = hospitalService.getHospitalById(hospitalId);
-        if(optionalHospital.isPresent()) {
-
-            Hospital hospital = optionalHospital.get();
-            hospital.setTotalBeds(hospital.getTotalBeds() + 1);
-            hospital.setAvailableBeds(hospital.getAvailableBeds() + 1);
-            hospital.setCurrentOccupancy(hospital.getCurrentOccupancy()+ 1);
-            hospitalService.updateHospital(hospital);
-
-        }
-
-
-        return bedRepository.save(bed);
     }
+
+
+
+
+
+
     public void deleteBed(String id, String hospitalId, String wardId) throws ExecutionException, InterruptedException {
         // Retrieve the bed
         Bed bed = bedRepository.findById(id)
@@ -116,12 +125,10 @@ public class BedService {
         // Update counts
         ward.setTotalBeds(ward.getTotalBeds() - 1);
         ward.setAvailableBeds(ward.getAvailableBeds() - 1);
-        ward.setCurrentOccupancy(ward.getCurrentOccupancy() - 1);
         wardService.updateWard(ward);
 
         hospital.setTotalBeds(hospital.getTotalBeds() - 1);
         hospital.setAvailableBeds(hospital.getAvailableBeds() - 1);
-        hospital.setCurrentOccupancy(hospital.getCurrentOccupancy() - 1);
         hospitalService.updateHospital(hospital);
 
         // Delete the bed from the database
@@ -137,9 +144,15 @@ public class BedService {
         return bedRepository.findByHospitalId(hospitalId);
     }
 
+    public List<Bed> getAllAvailableBedsByHospital(String hospitalId) throws ExecutionException, InterruptedException {
+        return bedRepository.findByIsAvailableAndHospitalId(true, hospitalId);
+    }
+
     public List<Bed> getAllAvailableBeds() throws ExecutionException, InterruptedException {
         return bedRepository.findByIsAvailable(true);
     }
+
+
 
     public List<Bed> getDirtyBeds() throws ExecutionException, InterruptedException {
         return bedRepository.findIfClean(false);
@@ -183,7 +196,7 @@ public class BedService {
 
     //Bed Transfer methods
 
-    public void requestBedTransfer(String bedId, String patientId, String requestingHospitalId, String transferReason) throws ExecutionException, InterruptedException {
+    public void requestBedTransfer(String bedId, String requestingHospitalId, String requestingPatientId, String transferReason) throws ExecutionException, InterruptedException {
         Bed bed = getBedById(bedId);
         if (bed == null) {
             throw new IllegalArgumentException("Bed not found with ID: " + bedId);
@@ -194,11 +207,10 @@ public class BedService {
 
         bed.setTransferRequested(true);
         bed.setRequestingHospitalId(requestingHospitalId);
+        bed.setRequestingPatientId(requestingPatientId);
         bed.setTransferReason(transferReason);
-        bed.setPatientId(patientId); // Associate the patient with the bed transfer
         bedRepository.updateBed(bed);
     }
-
 
     public void respondToBedTransferRequest(String bedId, boolean isAccepted, String responseReason) throws ExecutionException, InterruptedException {
         Bed bed = getBedById(bedId);
@@ -215,7 +227,7 @@ public class BedService {
         bedRepository.updateBed(bed);
     }
 
-    public void performBedTransfer(String bedId, String receivingHospitalId) throws ExecutionException, InterruptedException {
+    public void performBedTransfer(String bedId) throws ExecutionException, InterruptedException {
         Bed bed = getBedById(bedId);
         if (bed == null) {
             throw new IllegalArgumentException("Bed not found with ID: " + bedId);
@@ -224,9 +236,11 @@ public class BedService {
             throw new IllegalStateException("Transfer request must be accepted before performing the transfer.");
         }
 
-        // Update the hospital ID to the receiving hospital
-        bed.setHospitalId(receivingHospitalId);
-        bed.setWardId(null); // Reset the ward ID
+        // Get the requesting patient's ID from the bed
+        String requestingPatientId = bed.getRequestingPatientId();
+
+        // Assign patient to bed using the patientService
+        patientService.assignPatientToBed(requestingPatientId, bedId, bed.getWardId(), bed.getHospitalId());
 
         // Clear transfer-related fields
         bed.setTransferRequested(false);
@@ -234,13 +248,12 @@ public class BedService {
         bed.setTransferStatus(null);
         bed.setTransferResponseReason(null);
 
-        // Update the bed
         bedRepository.updateBed(bed);
     }
 
+
     public List<PendingBedTransferRequest> getPendingBedTransferRequests() throws ExecutionException, InterruptedException {
         List<PendingBedTransferRequest> pendingRequests = new ArrayList<>();
-
 
         List<Bed> beds = bedRepository.findByTransferRequestedTrue();
 
@@ -248,13 +261,19 @@ public class BedService {
             PendingBedTransferRequest request = new PendingBedTransferRequest();
             request.setBedId(bed.getId());
             request.setRequestingHospitalId(bed.getRequestingHospitalId());
-            request.setPatientId(bed.getPatientId());
+            request.setRequestingPatientId(bed.getRequestingPatientId());
+
+            // Check if bed is admitted by retrieving the patient from the patient repository and checking the admitted flag
+            Optional<Patient> patientOptional = patientRepository.findById(bed.getRequestingPatientId());
+            request.setPatientId(patientOptional.filter(Patient::getAdmitted).map(Patient::getId).orElse(null));
+
             request.setTransferReason(bed.getTransferReason());
             pendingRequests.add(request);
         }
 
         return pendingRequests;
     }
+
 
 
 

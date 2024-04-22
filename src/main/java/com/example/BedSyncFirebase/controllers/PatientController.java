@@ -21,15 +21,16 @@ public class PatientController {
     @Autowired
     private PatientService patientService;
 
-    @PostMapping("/create-patient")
-    public ResponseEntity<Patient> registerNewPatient(@PathVariable String hospitalId,@RequestBody Patient patient) {
+    @PostMapping("/create-patient/{hospitalId}")
+    public ResponseEntity<Patient> registerNewPatient(@PathVariable String hospitalId, @RequestBody Patient patient) {
         try {
-            Patient registeredPatient = patientService.registerPatient(hospitalId,patient);
+            Patient registeredPatient = patientService.registerPatient(hospitalId, patient);
             return ResponseEntity.status(HttpStatus.CREATED).body(registeredPatient);
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.badRequest().body(null);
         }
     }
+
 
     @GetMapping("/all")
     public ResponseEntity<List<Patient>> getAllPatients() {
@@ -104,10 +105,10 @@ public class PatientController {
         }
     }
 
-    @PostMapping("/{patientId}/{wardId}discharge") //I need to check to remove the BedId
-    public ResponseEntity<?> dischargePatient(@PathVariable String patientId, @PathVariable String wardId) {
+    @PostMapping("/{patientId}/{wardId}/{hospitalId}/discharge")
+    public ResponseEntity<?> dischargePatient(@PathVariable String patientId, @PathVariable String wardId, @PathVariable String hospitalId) {
         try {
-            patientService.dischargePatient(patientId,wardId);
+            patientService.dischargePatient(patientId, wardId, hospitalId);
             return ResponseEntity.ok().build();
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();

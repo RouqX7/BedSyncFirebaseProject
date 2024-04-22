@@ -73,7 +73,7 @@ public class PatientService {
         return patientRepository.findByIsInNeedOfBed(true);
     }
 
-    public void assignPatientToBed(String patientId,String hospitalId, String bedId, String wardId) throws ExecutionException, InterruptedException {
+    public void assignPatientToBed(String patientId, String bedId, String wardId,String hospitalId) throws ExecutionException, InterruptedException {
         // Get patient by ID
         Patient patient = getPatientById(patientId).orElseThrow(() -> new NoSuchElementException("Patient not found"));
 
@@ -94,7 +94,7 @@ public class PatientService {
         Hospital hospital = hospitalService.getHospitalById(hospitalId).orElseThrow(() -> new NoSuchElementException("Hospital not found"));
         // Update patient's bed assignment and admission date
         patient.setBedId(bedId);
-        patient.setAdmissionDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
+//        patient.setAdmissionDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
         patient.setAdmitted(true);
         patient.setInNeedOfBed(false);
         updatePatient(patient);
@@ -106,7 +106,7 @@ public class PatientService {
         bedRepository.updateBed(bed);
 
         hospital.setAvailableBeds(hospital.getAvailableBeds() - 1);
-        hospital.setCurrentOccupancy(hospital.getCurrentOccupancy() - 1);
+        hospital.setCurrentOccupancy(hospital.getCurrentOccupancy() + 1);
         hospitalRepository.updateHospital(hospital);
 
         // Update available beds count in the ward
@@ -120,7 +120,7 @@ public class PatientService {
 
 
 
-    public void dischargePatient(String patientId, String wardId) throws ExecutionException, InterruptedException {
+    public void dischargePatient(String patientId, String wardId, String hospitalId) throws ExecutionException, InterruptedException {
         // Retrieve patient by ID
         Patient patient = getPatientById(patientId).orElseThrow(() -> new NoSuchElementException("Patient not found"));
 
@@ -134,21 +134,23 @@ public class PatientService {
         }
 
         // Perform discharge action
-        // Update patient's discharge date and admitted flag
-        patient.setDischargeDate( ZonedDateTime.now(ZoneId.of("Europe/Dublin")));
+        // Update patient's discharge date, admitted flag, and hospitalId
         patient.setAdmitted(false);
         patient.setInNeedOfBed(true);
+        patient.setHospitalId(hospitalId); // Set hospitalId
         updatePatient(patient);
 
         // Update bed state and availability
         bed.setClean(false);
-        bed.setAvailable(true);
         bed.setPatientId(null);
         bed.setInUse(false);
         bedRepository.updateBed(bed);
 
+        Hospital hospital = hospitalService.getHospitalById(hospitalId).orElseThrow(() -> new NoSuchElementException("Hospital not found"));
+        hospital.setCurrentOccupancy(hospital.getCurrentOccupancy() - 1);
+        hospitalRepository.updateHospital(hospital);
+
         // Update the ward
-        ward.setAvailableBeds(ward.getAvailableBeds() + 1);
         ward.setCurrentOccupancy(ward.getCurrentOccupancy() - 1);
         wardRepository.updateWard(ward);
     }

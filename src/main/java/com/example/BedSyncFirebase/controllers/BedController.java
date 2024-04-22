@@ -35,6 +35,15 @@ public class BedController {
         return bedService.getAllBeds();
     }
 
+    @GetMapping("/availableBeds")
+    public List<Bed> getAllAvailableBeds(@RequestParam(required = false) String hospitalId) throws ExecutionException, InterruptedException {
+        if (hospitalId != null && !hospitalId.isEmpty()) {
+            return bedService.getAllAvailableBedsByHospital(hospitalId);
+        }
+        return bedService.getAllAvailableBeds();
+    }
+
+
     @GetMapping("/{bedId}")
     public ResponseEntity<?> getBedById(@PathVariable String bedId) {
         try {
@@ -156,11 +165,9 @@ public class BedController {
     // Endpoint for requesting bed transfer
     @PostMapping("/{bedId}/requestBedTransfer")
     public ResponseEntity<String> requestBedTransfer(@PathVariable String bedId,
-                                                     @RequestParam String requestingHospitalId,
-                                                     @RequestParam String transferReason,
-                                                     @RequestParam String patientId) {
+                                                     @RequestBody PendingBedTransferRequest request) {
         try {
-            bedService.requestBedTransfer(bedId, patientId, requestingHospitalId, transferReason);
+            bedService.requestBedTransfer(bedId, request.getRequestingHospitalId(),request.getRequestingPatientId(), request.getTransferReason());
             return ResponseEntity.ok("Bed transfer requested successfully.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Bed not found with ID: " + bedId);
@@ -172,6 +179,7 @@ public class BedController {
     }
 
 
+
     // Endpoint for responding to bed transfer request
     @PostMapping("/{bedId}/transfer/response")
     public ResponseEntity<String> respondToBedTransferRequest(@PathVariable String bedId, @RequestParam boolean isAccepted, @RequestParam String responseReason) throws ExecutionException, InterruptedException {
@@ -181,8 +189,8 @@ public class BedController {
 
     // Endpoint for performing bed transfer
     @PostMapping("/{bedId}/transfer/perform")
-    public ResponseEntity<String> performBedTransfer(@PathVariable String bedId, @RequestParam String receivingHospitalId) throws ExecutionException, InterruptedException {
-        bedService.performBedTransfer(bedId, receivingHospitalId);
+    public ResponseEntity<String> performBedTransfer(@PathVariable String bedId) throws ExecutionException, InterruptedException {
+        bedService.performBedTransfer(bedId);
         return ResponseEntity.ok("Bed transfer performed successfully.");
     }
 

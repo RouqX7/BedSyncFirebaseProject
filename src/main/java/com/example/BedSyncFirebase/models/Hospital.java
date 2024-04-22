@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
-@Builder
 @Data
 public class Hospital {
 
@@ -15,6 +14,10 @@ public class Hospital {
     private int totalBeds;
     private int availableBeds;
     private int currentOccupancy;
+
+    public Hospital(){
+
+    }
 
 
 
